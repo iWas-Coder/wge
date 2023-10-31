@@ -19,6 +19,7 @@
 */
 
 
+#include <event.h>
 #include <logger.h>
 #include <asserts.h>
 #include <kmemory.h>
@@ -62,6 +63,11 @@ b8 application_create(game *game_inst) {
   app_state.is_running = TRUE;
   app_state.is_suspended = FALSE;
 
+  if (!event_initialize()) {
+    KERROR("Event system initialization failed");
+    return FALSE;
+  }
+
   if (!platform_startup(&app_state.platform,
                         game_inst->app_config.name,
                         game_inst->app_config.start_pos_x,
@@ -101,6 +107,7 @@ b8 application_run(void) {
   }
   app_state.is_running = FALSE;
 
+  event_shutdown();
   platform_shutdown(&app_state.platform);
   return TRUE;
 }

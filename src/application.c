@@ -1,25 +1,26 @@
 /*
-* GNU WGE --- Wildebeest Game Engine™
-* Copyright (C) 2023 Wasym A. Alonso
-*
-* This file is part of WGE.
-*
-* WGE is free software: you can redistribute it and/or modify
-* it under the terms of the GNU General Public License as published by
-* the Free Software Foundation, either version 3 of the License, or
-* (at your option) any later version.
-*
-* WGE is distributed in the hope that it will be useful,
-* but WITHOUT ANY WARRANTY; without even the implied warranty of
-* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-* GNU General Public License for more details.
-*
-* You should have received a copy of the GNU General Public License
-* along with WGE.  If not, see <http://www.gnu.org/licenses/>.
-*/
+ * GNU WGE --- Wildebeest Game Engine™
+ * Copyright (C) 2023 Wasym A. Alonso
+ *
+ * This file is part of WGE.
+ *
+ * WGE is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * WGE is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with WGE.  If not, see <http://www.gnu.org/licenses/>.
+ */
 
 
 #include <event.h>
+#include <input.h>
 #include <logger.h>
 #include <asserts.h>
 #include <kmemory.h>
@@ -40,6 +41,43 @@ typedef struct {
 static application_state app_state;
 static b8 initialized = FALSE;
 
+b8 application_on_event(u16 code, void *sender, void *listener_inst, event_context context);
+b8 application_on_event(u16 code, void *sender, void *listener_inst, event_context context) {
+  (void) sender;         // Unused parameter
+  (void) listener_inst;  // Unused parameter
+  (void) context;        // Unused parameter
+
+  if (code == EVENT_CODE_APPLICATION_QUIT) {
+    KINFO("Quit event received. Shutting down the engine...");
+    app_state.is_running = FALSE;
+    return TRUE;
+  }
+  return FALSE;
+}
+
+b8 application_on_key(u16 code, void *sender, void *listener_inst, event_context context);
+b8 application_on_key(u16 code, void *sender, void *listener_inst, event_context context) {
+  (void) sender;         // Unused parameter
+  (void) listener_inst;  // Unused parameter
+
+  // Key pressed
+  if (code == EVENT_CODE_KEY_PRESSED) {
+    u16 key_code = context.data.u16[0];
+    if (key_code == KEY_ESCAPE) {
+      event_context data = {0};
+      event_fire(EVENT_CODE_APPLICATION_QUIT, 0, data);
+      return TRUE;
+    }
+    else KDEBUG("'%c' key pressed", key_code);
+  }
+  // Key released
+  else if (code == EVENT_CODE_KEY_RELEASED) {
+    u16 key_code = context.data.u16[0];
+    KDEBUG("'%c' key released", key_code);
+  }
+  return FALSE;
+}
+
 b8 application_create(game *game_inst) {
   if (initialized) {
     KERROR("Tried to create the application multiple times");
@@ -50,15 +88,7 @@ b8 application_create(game *game_inst) {
 
   // Initialize all subsystems
   initialize_logging();
-
-  KFATAL("A test message: %f", 3.14f);
-  KERROR("A test message: %f", 3.14f);
-  KWARN("A test message: %f", 3.14f);
-  KINFO("A test message: %f", 3.14f);
-  KDEBUG("A test message: %f", 3.14f);
-  KTRACE("A test message: %f", 3.14f);
-
-  KASSERT(3.14f == 3.14f);
+  input_initialize();
 
   app_state.is_running = TRUE;
   app_state.is_suspended = FALSE;
@@ -67,6 +97,10 @@ b8 application_create(game *game_inst) {
     KERROR("Event system initialization failed");
     return FALSE;
   }
+
+  event_register(EVENT_CODE_APPLICATION_QUIT, 0, application_on_event);
+  event_register(EVENT_CODE_KEY_PRESSED, 0, application_on_key);
+  event_register(EVENT_CODE_KEY_RELEASED, 0, application_on_key);
 
   if (!platform_startup(&app_state.platform,
                         game_inst->app_config.name,
@@ -103,11 +137,19 @@ b8 application_run(void) {
         app_state.is_running = FALSE;
         break;
       }
+
+      // Input is the last thing to be updated before the frame ends
+      input_update(0);
     }
   }
   app_state.is_running = FALSE;
 
+  event_unregister(EVENT_CODE_APPLICATION_QUIT, 0, application_on_event);
+  event_unregister(EVENT_CODE_KEY_PRESSED, 0, application_on_key);
+  event_unregister(EVENT_CODE_KEY_RELEASED, 0, application_on_key);
+
   event_shutdown();
+  input_shutdown();
   platform_shutdown(&app_state.platform);
   return TRUE;
 }

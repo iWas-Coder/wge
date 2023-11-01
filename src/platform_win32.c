@@ -1,28 +1,29 @@
 /*
-* GNU WGE --- Wildebeest Game Engine™
-* Copyright (C) 2023 Wasym A. Alonso
-*
-* This file is part of WGE.
-*
-* WGE is free software: you can redistribute it and/or modify
-* it under the terms of the GNU General Public License as published by
-* the Free Software Foundation, either version 3 of the License, or
-* (at your option) any later version.
-*
-* WGE is distributed in the hope that it will be useful,
-* but WITHOUT ANY WARRANTY; without even the implied warranty of
-* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-* GNU General Public License for more details.
-*
-* You should have received a copy of the GNU General Public License
-* along with WGE.  If not, see <http://www.gnu.org/licenses/>.
-*/
+ * GNU WGE --- Wildebeest Game Engine™
+ * Copyright (C) 2023 Wasym A. Alonso
+ *
+ * This file is part of WGE.
+ *
+ * WGE is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * WGE is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with WGE.  If not, see <http://www.gnu.org/licenses/>.
+ */
 
 
 #include <platform.h>
 
 #if KPLATFORM_WINDOWS
 
+#include <input.h>
 #include <logger.h>
 
 #include <windows.h>
@@ -54,13 +55,21 @@ LRESULT CALLBACK win32_process_message(HWND hwnd, u32 msg, WPARAM w_param, LPARA
   case WM_SYSKEYDOWN:
   case WM_KEYUP:
   case WM_SYSKEYUP: {
-    // TODO: input processing
+    b8 pressed = (msg == WM_KEYDOWN || msg == WM_SYSKEYDOWN);
+    keys key = (u16) w_param;
+    input_process_key(key, pressed);
   } break;
   case WM_MOUSEMOVE: {
-    // TODO: input processing
+    i32 x_position = GET_X_LPARAM(l_param);
+    i32 y_position = GET_Y_LPARAM(l_param);
+    input_process_mouse_move(x_position, y_position);
   } break;
   case WM_MOUSEWHEEL: {
-    // TODO: input processing
+    i32 z_delta = GET_WHEEL_DELTA_WPARAM(w_param);
+    if (z_delta) {
+      z_delta = (z_delta < 0) ? -1 : 1;
+      input_process_mouse_wheel(z_delta);
+    }
   } break;
   case WM_LBUTTONDOWN:
   case WM_MBUTTONDOWN:
@@ -68,7 +77,25 @@ LRESULT CALLBACK win32_process_message(HWND hwnd, u32 msg, WPARAM w_param, LPARA
   case WM_LBUTTONUP:
   case WM_MBUTTONUP:
   case WM_RBUTTONUP: {
-    // TODO: input processing
+    b8 pressed = (msg == WM_LBUTTONDOWN ||
+                  msg == WM_MBUTTONDOWN ||
+                  msg == WM_RBUTTONDOWN);
+    buttons mouse_button = BUTTON_MAX_BUTTONS;
+    switch (msg) {
+    case WM_LBUTTONDOWN:
+    case WM_LBUTTONUP:
+      mouse_button = BUTTON_LEFT;
+      break;
+    case WM_MBUTTONDOWN:
+    case WM_MBUTTONUP:
+      mouse_button = BUTTON_MIDDLE;
+      break;
+    case WM_RBUTTONDOWN:
+    case WM_RBUTTONUP:
+      mouse_button = BUTTON_RIGHT;
+      break;
+    }
+    if (mouse_button != BUTTON_MAX_BUTTONS) input_process_button(mouse_button, pressed);
   } break;
   }
   return DefWindowProcA(hwnd, msg, w_param, l_param);
@@ -203,7 +230,7 @@ void platform_console_write(const char *message, u8 color) {
   };
   SetConsoleTextAttribute(console_handle, levels[color]);
   OutputDebugStringA(message);
-  u64 length = strlen(message);
+  u64 length = kstrlen(message);
   LPDWORD number_written = 0;
   WriteConsoleA(GetStdHandle(STD_OUTPUT_HANDLE), message, (DWORD) length, number_written, 0);
 }
@@ -220,7 +247,7 @@ void platform_console_write_error(const char *message, u8 color) {
   };
   SetConsoleTextAttribute(console_handle, levels[color]);
   OutputDebugStringA(message);
-  u64 length = strlen(message);
+  u64 length = kstrlen(message);
   LPDWORD number_written = 0;
   WriteConsoleA(GetStdHandle(STD_ERROR_HANDLE), message, (DWORD) length, number_written, 0);
 }

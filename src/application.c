@@ -21,12 +21,16 @@
 
 #include <event.h>
 #include <input.h>
+#include <clock.h>
 #include <logger.h>
 #include <asserts.h>
 #include <kmemory.h>
 #include <platform.h>
 #include <game_types.h>
 #include <application.h>
+
+#define FRAMERATE 60
+#define TIME_MS_IN_S 1e3
 
 typedef struct {
   game *game_inst;
@@ -35,6 +39,7 @@ typedef struct {
   platform_state platform;
   i16 width;
   i16 height;
+  clock clock;
   f64 last_time;
 } application_state;
 
@@ -121,25 +126,55 @@ b8 application_create(game *game_inst) {
 }
 
 b8 application_run(void) {
+  clock_start(&app_state.clock);
+  clock_update(&app_state.clock);
+  app_state.last_time = app_state.clock.elapsed;
+
+  f64 running_time = 0;
+  u8 frame_count = 0;
+  f64 target_frame_time = 1.0f / FRAMERATE;
+
   KINFO(get_memory_usage_str());
 
   while (app_state.is_running) {
     if (!platform_pump_messages(&app_state.platform)) app_state.is_running = FALSE;
 
     if (!app_state.is_suspended) {
-      if (!app_state.game_inst->update(app_state.game_inst, (f32) 0)) {
+      clock_update(&app_state.clock);
+      f64 current_time = app_state.clock.elapsed;
+      f64 delta = current_time - app_state.last_time;
+      f64 frame_start_time = platform_get_absolute_time();
+
+      if (!app_state.game_inst->update(app_state.game_inst, (f32) delta)) {
         KFATAL("Game update failed. Shutting down the engine...");
         app_state.is_running = FALSE;
         break;
       }
-      if (!app_state.game_inst->render(app_state.game_inst, (f32) 0)) {
+      if (!app_state.game_inst->render(app_state.game_inst, (f32) delta)) {
         KFATAL("Game render failed. Shutting down the engine...");
         app_state.is_running = FALSE;
         break;
       }
 
+      f64 frame_end_time = platform_get_absolute_time();
+      f64 frame_elapsed_time = frame_end_time - frame_start_time;
+      running_time += frame_elapsed_time;
+      f64 remaining_time = target_frame_time - frame_elapsed_time;
+      if (remaining_time > 0) {
+        u64 remaining_ms = remaining_time * TIME_MS_IN_S;
+        // Framelimiter turned ON if this is set to TRUE
+        b8 framelimit = FALSE;
+        if (remaining_ms > 0 && framelimit) platform_sleep(remaining_ms - 1);
+        ++frame_count;
+      }
+
       // Input is the last thing to be updated before the frame ends
-      input_update(0);
+      input_update(delta);
+
+      (void) running_time;  // Unused parameter
+      (void) frame_count;   // Unused parameter
+
+      app_state.last_time = current_time;
     }
   }
   app_state.is_running = FALSE;
@@ -151,5 +186,6 @@ b8 application_run(void) {
   event_shutdown();
   input_shutdown();
   platform_shutdown(&app_state.platform);
+
   return TRUE;
 }

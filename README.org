@@ -5,8 +5,19 @@
 [[assets/logo.png]]
 # License badge
 [[https://www.gnu.org/licenses/gpl-3.0.html][https://img.shields.io/badge/License-GPLv3-blue.svg]]
+# Codefactor QA badge
+#+begin_html
+<a href="https://www.codefactor.io/repository/github/iwas-coder/wge"><img src="https://www.codefactor.io/repository/github/iwas-coder/wge/badge" alt="Code QA"/></a>
+#+end_html
+@@html:<br>@@
 
 (...)
+
+#+BEGIN_QUOTE
+This work and all its documentation is licensed under the Creative Commons Attribution-ShareAlike 4.0 International (CC BY-SA 4.0) License. @@html:<br>@@
+This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version. @@html:<br>@@
+This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
+#+END_QUOTE
 
 * Table of Contents :toc:
 - [[#preliminary-aspects][Preliminary aspects]]
@@ -15,6 +26,9 @@
   - [[#project-structure][Project structure]]
   - [[#feature-list][Feature list]]
   - [[#engine-architecture][Engine architecture]]
+  - [[#renderer][Renderer]]
+- [[#build][Build]]
+- [[#usage][Usage]]
 
 * Preliminary aspects
 
@@ -58,3 +72,34 @@ mindmap
 
 #+CAPTION: Engine architecture diagram
 [[assets/engine-arch-diagram.png]]
+
+** Renderer
+
+(...)
+
+*** Architecture
+
+(...)
+
+*** Lifecycle
+
+(...)
+
+*** Phases
+
+(...)
+
+* Build
+
+WGE ships with a ready-to-go ~Makefile~, so *GNU Make* is needed in order to build the engine. It is as simple as doing:
+#+begin_src sh
+$  make
+#+end_src
+By default, it targets the *Linux platform* (e.g. /GNU/Linux/). In order to build the project for Windows, it will be needed the *MinGW-w64* compiler suite in order to cross-compile it. With all that setup, it can be specified by doing:
+#+begin_src sh
+$  make TARGET=windows
+#+end_src
+
+* Usage
+
+(...)

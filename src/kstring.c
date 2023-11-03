@@ -34,3 +34,7 @@ char *kstrdup(const char *str) {
   kcopy_memory(dup, str, length + 1);
   return dup;
 }
+
+b8 kstrcmp(const char *s1, const char *s2) {
+  return strcmp(s1, s2) == 0;
+}

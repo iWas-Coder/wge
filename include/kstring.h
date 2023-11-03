@@ -25,3 +25,4 @@
 
 KAPI u64 kstrlen(const char *str);
 KAPI char *kstrdup(const char *str);
+KAPI b8 kstrcmp(const char *s1, const char *s2);

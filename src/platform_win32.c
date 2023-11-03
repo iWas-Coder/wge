@@ -25,18 +25,23 @@
 
 #include <input.h>
 #include <logger.h>
+#include <darray.h>
 
 #include <windows.h>
 #include <windowsx.h>
+
+#include <vulkan_types.h>
+#include <vulkan/vulkan.h>
+#include <vulkan/vulkan_win32.h>
 
 #define WINDOW_CLASS "wge_window_class"
 
 typedef struct {
   HINSTANCE h_instance;
   HWND hwnd;
+  VkSurfaceKHR surface;
 } internal_state;
 
-LRESULT CALLBACK win32_process_message(HWND hwnd, u32 msg, WPARAM w_param, LPARAM l_param);
 LRESULT CALLBACK win32_process_message(HWND hwnd, u32 msg, WPARAM w_param, LPARAM l_param) {
   switch (msg) {
   case WM_ERASEKGND:
@@ -218,8 +223,8 @@ void *platform_set_memory(void *dest, i32 value, u64 size) {
   return memset(dest, value, size);
 }
 
-void platform_console_write(const char *message, u8 color) {
-  HANDLE console_handle = GetStdHandle(STD_OUTPUT_HANDLE);
+void platform_console_write_loglevel(const char *message, u8 color, DWORD handle) {
+  HANDLE console_handle = GetStdHandle(handle);
   static u8 levels[] = {
     64,  // FATAL
     4,   // ERROR
@@ -232,24 +237,15 @@ void platform_console_write(const char *message, u8 color) {
   OutputDebugStringA(message);
   u64 length = kstrlen(message);
   LPDWORD number_written = 0;
-  WriteConsoleA(GetStdHandle(STD_OUTPUT_HANDLE), message, (DWORD) length, number_written, 0);
+  WriteConsoleA(GetStdHandle(handle), message, (DWORD) length, number_written, 0);
+}
+
+void platform_console_write(const char *message, u8 color) {
+  platform_console_write_loglevel(message, color, STD_OUTPUT_HANDLE);
 }
 
 void platform_console_write_error(const char *message, u8 color) {
-  HANDLE console_handle = GetStdHandle(STD_ERROR_HANDLE);
-  static u8 levels[] = {
-    64,  // FATAL
-    4,   // ERROR
-    6,   // WARN
-    2,   // INFO
-    1,   // DEBUG
-    8    // TRACE
-  };
-  SetConsoleTextAttribute(console_handle, levels[color]);
-  OutputDebugStringA(message);
-  u64 length = kstrlen(message);
-  LPDWORD number_written = 0;
-  WriteConsoleA(GetStdHandle(STD_ERROR_HANDLE), message, (DWORD) length, number_written, 0);
+  platform_console_write_loglevel(message, color, STD_ERROR_HANDLE);
 }
 
 f64 platform_get_absolute_time(void) {
@@ -260,6 +256,30 @@ f64 platform_get_absolute_time(void) {
 
 void platform_sleep(u64 ms) {
   Sleep(ms);
+}
+
+void platform_get_required_extension_names(const char ***names_darray) {
+  darray_push(*names_darray, &"VK_KHR_win32_surface");
+}
+
+b8 platform_create_vulkan_surface(platform_state *plat_state, vulkan_context *context) {
+  internal_state *state = (internal_state *) plat_state->internal_state;
+
+  VkWin32SurfaceCreateInfoKHR create_info = {
+    .sType = VK_STRUCTURE_TYPE_WIN32_SURFACE_CREATE_INFO_KHR,
+    .hinstance = state->h_instance,
+    .hwnd = state->hwnd
+  };
+  VkResult result = vkCreateWin32SurfaceKHR(context->instance,
+                                            &create_info,
+                                            context->allocator,
+                                            &state->surface);
+  if (result != VK_SUCCESS) {
+    KFATAL("Failed to create surface");
+    return FALSE;
+  }
+  context->surface = state->surface;
+  return TRUE;
 }
 
 #endif  // KPLATFORM_WINDOWS

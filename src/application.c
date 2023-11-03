@@ -28,6 +28,7 @@
 #include <platform.h>
 #include <game_types.h>
 #include <application.h>
+#include <renderer_frontend.h>
 
 #define FRAMERATE 60
 #define TIME_MS_IN_S 1e3
@@ -99,7 +100,7 @@ b8 application_create(game *game_inst) {
   app_state.is_suspended = FALSE;
 
   if (!event_initialize()) {
-    KERROR("Event system initialization failed");
+    KERROR("Event system initialization failed. Shutting down the engine...");
     return FALSE;
   }
 
@@ -114,9 +115,15 @@ b8 application_create(game *game_inst) {
                         game_inst->app_config.start_width,
                         game_inst->app_config.start_height)) return FALSE;
 
+  // Renderer initialization
+  if (!renderer_initialize(game_inst->app_config.name, &app_state.platform)) {
+    KFATAL("Renderer initialization failed. Shutting down the engine...");
+    return FALSE;
+  }
+
   // Game initialization
   if (!app_state.game_inst->initialize(app_state.game_inst)) {
-    KFATAL("Game initialization failed");
+    KFATAL("Game initialization failed. Shutting down the engine...");
     return FALSE;
   }
   app_state.game_inst->on_resize(app_state.game_inst, app_state.width, app_state.height);
@@ -156,6 +163,10 @@ b8 application_run(void) {
         break;
       }
 
+      render_packet packet;
+      packet.delta_time = delta;
+      renderer_draw_frame(&packet);
+
       f64 frame_end_time = platform_get_absolute_time();
       f64 frame_elapsed_time = frame_end_time - frame_start_time;
       running_time += frame_elapsed_time;
@@ -185,6 +196,7 @@ b8 application_run(void) {
 
   event_shutdown();
   input_shutdown();
+  renderer_shutdown();
   platform_shutdown(&app_state.platform);
 
   return TRUE;

@@ -26,6 +26,7 @@
 #include <event.h>
 #include <input.h>
 #include <logger.h>
+#include <darray.h>
 #include <kstring.h>
 
 #include <xcb/xcb.h>
@@ -45,6 +46,12 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include <vulkan_types.h>
+#include <vulkan/vulkan.h>
+#include <vulkan/vulkan_xcb.h>
+
+#define VK_USE_PLATFORM_XCB_KHR
+
 #define TIME_NS_IN_S 1e-9
 #define TIME_MS_IN_S 1e3
 
@@ -55,9 +62,9 @@ typedef struct {
   xcb_screen_t *screen;
   xcb_atom_t wm_protocols;
   xcb_atom_t wm_delete_win;
+  VkSurfaceKHR surface;
 } internal_state;
 
-keys translate_keycode(u32 xcb_keycode);
 keys translate_keycode(u32 xcb_keycode) {
   switch (xcb_keycode) {
   case XK_BackSpace:    return KEY_BACKSPACE;
@@ -388,7 +395,7 @@ void platform_console_write(const char *message, u8 color) {
     "1;33",  // WARN
     "1;32",  // INFO
     "1;34",  // DEBUG
-    "1;30"   // TRACE
+    "1;33"   // TRACE
   };
   printf("\033[%sm%s\033[0m", color_strings[color], message);
 }
@@ -421,6 +428,30 @@ void platform_sleep(u64 ms) {
   if (ms >= TIME_MS_IN_S) sleep(ms / TIME_MS_IN_S);
   usleep((ms % (u64) TIME_MS_IN_S) * TIME_MS_IN_S);
 #endif  // _POSIX_C_SOURCE >= 199309L
+}
+
+void platform_get_required_extension_names(const char ***names_darray) {
+  darray_push(*names_darray, &"VK_KHR_xcb_surface");
+}
+
+b8 platform_create_vulkan_surface(platform_state *plat_state, vulkan_context *context) {
+  internal_state *state = (internal_state *) plat_state->internal_state;
+
+  VkXcbSurfaceCreateInfoKHR create_info = {
+    .sType = VK_STRUCTURE_TYPE_XCB_SURFACE_CREATE_INFO_KHR,
+    .connection = state->connection,
+    .window = state->window
+  };
+  VkResult result = vkCreateXcbSurfaceKHR(context->instance,
+                                          &create_info,
+                                          context->allocator,
+                                          &state->surface);
+  if (result != VK_SUCCESS) {
+    KFATAL("Failed to create surface");
+    return FALSE;
+  }
+  context->surface = state->surface;
+  return TRUE;
 }
 
 #endif  // KPLATFORM_LINUX

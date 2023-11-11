@@ -26,6 +26,8 @@
 #include <vulkan_device.h>
 #include <vulkan_backend.h>
 #include <vulkan_platform.h>
+#include <vulkan_swapchain.h>
+#include <vulkan_renderpass.h>
 
 static vulkan_context context;
 
@@ -51,11 +53,26 @@ VKAPI_ATTR VkBool32 VKAPI_CALL vk_debug_callback(VkDebugUtilsMessageSeverityFlag
   return VK_FALSE;
 }
 
+i32 find_memory_index(u32 type_filter, u32 property_flags) {
+  VkPhysicalDeviceMemoryProperties memory_properties;
+  vkGetPhysicalDeviceMemoryProperties(context.device.physical_device, &memory_properties);
+  for (u32 i = 0; i < memory_properties.memoryTypeCount; ++i) {
+    if (type_filter & (1 << i) &&
+        (memory_properties.memoryTypes[i].propertyFlags & property_flags) == property_flags) return i;
+  }
+
+  KWARN("Suitable memory type not found");
+  return -1;
+}
+
 b8 vulkan_renderer_backend_initialize(renderer_backend *backend,
                                       const char *application_name,
                                       struct platform_state *plat_state) {
   (void) backend;     // Unused parameter
   (void) plat_state;  // Unused parameter
+
+  // Set the `find_memory_index` function pointer to its definition
+  context.find_memory_index = find_memory_index;
 
   // TODO: custom Vulkan allocator
   context.allocator = 0;
@@ -161,12 +178,33 @@ b8 vulkan_renderer_backend_initialize(renderer_backend *backend,
     return FALSE;
   }
 
+  // Create swapchain
+  vulkan_swapchain_create(&context,
+                          context.framebuffer_width,
+                          context.framebuffer_height,
+                          &context.swapchain);
+
+  // Create renderpass
+  vulkan_renderpass_create(&context,
+                           &context.main_renderpass,
+                           0, 0,
+                           context.framebuffer_width,
+                           context.framebuffer_height,
+                           0.0f, 0.0f, 0.2f, 1.0f,
+                           1.0f, 0);
+
   KINFO("Vulkan renderer initialized");
   return TRUE;
 }
 
 void vulkan_renderer_backend_shutdown(renderer_backend *backend) {
   (void) backend;  // Unused parameter
+
+  // Destroy renderpass
+  vulkan_renderpass_destroy(&context, &context.main_renderpass);
+
+  // Destroy swapchain
+  vulkan_swapchain_destroy(&context, &context.swapchain);
 
   // Destroy device
   vulkan_device_destroy(&context);

@@ -42,11 +42,11 @@ typedef char b8;
 typedef int b32;
 
 // Static assertions definition
-#if defined(__clang__) || defined(__gcc__)
+#if defined(__clang__) || defined(__GNUC__)
 #define STATIC_ASSERT _Static_assert
 #else
 #define STATIC_ASSERT static_assert
-#endif  // defined(__clang__) || defined(__gcc__)
+#endif  // defined(__clang__) || defined(__GNUC__)
 
 // Check size of unsigned integer types
 STATIC_ASSERT(sizeof(u8) == 1, "ERROR: u8 :: 1B");
@@ -122,3 +122,5 @@ STATIC_ASSERT(sizeof(f64) == 8, "ERROR: f64 :: 8B");
 #define KAPI
 #endif  // _MSC_VER
 #endif  // KEXPORT
+
+#define KCLAMP(value, min, max) ((value <= min) ? min : (value >= max) ? max : value)

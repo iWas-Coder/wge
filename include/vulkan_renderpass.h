@@ -23,11 +23,19 @@
 
 #include <vulkan_types.h>
 
-b8 vulkan_device_create(vulkan_context *context);
-void vulkan_device_destroy(vulkan_context *context);
+void vulkan_renderpass_create(vulkan_context *context,
+                              vulkan_renderpass *out_renderpass,
+                              f32 x, f32 y, f32 w, f32 h,
+                              f32 r, f32 g, f32 b, f32 a,
+                              f32 depth,
+                              u32 stencil);
 
-void vulkan_device_query_swapchain_support(VkPhysicalDevice physical_device,
-                                           VkSurfaceKHR surface,
-                                           vulkan_swapchain_support_info *out_support_info);
+void vulkan_renderpass_destroy(vulkan_context *context,
+                               vulkan_renderpass *renderpass);
 
-b8 vulkan_device_detect_depth_format(vulkan_device *device);
+void vulkan_renderpass_begin(vulkan_command_buffer *command_buffer,
+                             vulkan_renderpass *renderpass,
+                             VkFramebuffer framebuffer);
+
+void vulkan_renderpass_end(vulkan_command_buffer *command_buffer,
+                           vulkan_renderpass *renderpass);

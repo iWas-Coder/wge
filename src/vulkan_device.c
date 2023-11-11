@@ -436,3 +436,22 @@ void vulkan_device_destroy(vulkan_context *context) {
   context->device.transfer = -1;
   KINFO("Released physical device resources");
 }
+
+b8 vulkan_device_detect_depth_format(vulkan_device *device) {
+  const u64 candidate_count = 3;
+  VkFormat candidates[] = {
+    VK_FORMAT_D32_SFLOAT,          // 32 bits for depth
+    VK_FORMAT_D32_SFLOAT_S8_UINT,  // 32 bits for depth and 8 bits for stencil
+    VK_FORMAT_D24_UNORM_S8_UINT    // 24 bits for depth (norm.) and 8 bits for stencil
+  };
+  u32 flags = VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT;
+  for (u64 i = 0; i < candidate_count; ++i) {
+    VkFormatProperties properties;
+    vkGetPhysicalDeviceFormatProperties(device->physical_device, candidates[i], &properties);
+    if (((properties.linearTilingFeatures | properties.optimalTilingFeatures) & flags) == flags) {
+      device->depth_format = candidates[i];
+      return TRUE;
+    }
+  }
+  return FALSE;
+}

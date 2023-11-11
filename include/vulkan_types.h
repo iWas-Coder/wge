@@ -50,7 +50,58 @@ typedef struct {
   VkPhysicalDeviceProperties properties;
   VkPhysicalDeviceFeatures features;
   VkPhysicalDeviceMemoryProperties memory;
+  VkFormat depth_format;
 } vulkan_device;
+
+typedef struct {
+  VkImage handle;
+  VkDeviceMemory memory;
+  VkImageView view;
+  u32 width;
+  u32 height;
+} vulkan_image;
+
+typedef enum {
+  READY,
+  RECORDING,
+  IN_RENDER_PASS,
+  RECORDING_ENDED,
+  SUBMITTED,
+  NOT_ALLOCATED
+} vulkan_renderpass_state;
+
+typedef struct {
+  VkRenderPass handle;
+  f32 x, y, w, h;
+  f32 r, g, b, a;
+  f32 depth;
+  u32 stencil;
+  vulkan_renderpass_state state;
+} vulkan_renderpass;
+
+typedef struct {
+  VkSwapchainKHR handle;
+  VkSurfaceFormatKHR image_format;
+  u8 max_frames_in_flight;
+  u32 image_count;
+  VkImage *images;
+  VkImageView *views;
+  vulkan_image depth_attachment;
+} vulkan_swapchain;
+
+typedef enum {
+  COMMAND_BUFFER_STATE_READY,
+  COMMAND_BUFFER_STATE_RECORDING,
+  COMMAND_BUFFER_STATE_IN_RENDER_PASS,
+  COMMAND_BUFFER_STATE_RECORDING_ENDED,
+  COMMAND_BUFFER_STATE_SUBMITTED,
+  COMMAND_BUFFER_STATE_NOT_ALLOCATED
+} vulkan_command_buffer_state;
+
+typedef struct {
+  VkCommandBuffer handle;
+  vulkan_command_buffer_state state;
+} vulkan_command_buffer;
 
 typedef struct {
   VkInstance instance;
@@ -60,4 +111,12 @@ typedef struct {
   VkDebugUtilsMessengerEXT debug_messenger;
 #endif
   vulkan_device device;
+  u32 framebuffer_width;
+  u32 framebuffer_height;
+  vulkan_swapchain swapchain;
+  vulkan_renderpass main_renderpass;
+  u32 image_index;
+  u32 current_frame;
+  b8 recreating_swapchain;
+  i32 (*find_memory_index)(u32 type_filter, u32 property_flags);
 } vulkan_context;

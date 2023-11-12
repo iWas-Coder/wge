@@ -21,14 +21,13 @@
 
 #pragma once
 
-#include <math.h>
 #include <defines.h>
 
 #define MEM_USE_PRINT_BUF_SIZE 8000
 #define MEM_PRINT_UNIT_SYM_SIZE 3 + 1  // 3 chars + '\0'
-#define MEM_B_IN_KIB 1024  // 2^10 B
-#define MEM_B_IN_MIB pow(MEM_B_IN_KIB, 2)  // 2^20 B
-#define MEM_B_IN_GIB pow(MEM_B_IN_KIB, 3)  // 2^30 B
+#define MEM_B_IN_KIB (1 << 10)  // 2^10 B
+#define MEM_B_IN_MIB (1 << 20)  // 2^20 B
+#define MEM_B_IN_GIB (1 << 30)  // 2^30 B
 
 typedef enum {
   MEMORY_TAG_UNKNOWN,

@@ -270,4 +270,7 @@ void vulkan_swapchain_present(vulkan_context *context,
                               swapchain);
   }
   else if (result != VK_SUCCESS) KFATAL("Present swapchain image failed");
+
+  // Increment the current frame counter looping it through 'max_frames_in_flight' as limit
+  context->current_frame = (context->current_frame + 1) % swapchain->max_frames_in_flight;
 }

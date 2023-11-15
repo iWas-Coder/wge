@@ -21,19 +21,14 @@
 
 #pragma once
 
-#include <defines.h>
+#include <vulkan_types.h>
 
-struct game;  // Forward declaration
+void vulkan_framebuffer_create(vulkan_context *context,
+                               vulkan_renderpass *renderpass,
+                               u32 width,
+                               u32 height,
+                               u32 attachment_count,
+                               VkImageView *attachments,
+                               vulkan_framebuffer *out_framebuffer);
 
-typedef struct {
-  i16 start_pos_x;
-  i16 start_pos_y;
-  i16 start_width;
-  i16 start_height;
-  char *name;
-} application_config;
-
-KAPI b8 application_create(struct game *game_inst);
-KAPI b8 application_run(void);
-
-void application_set_framebuffer_size(u32 *width, u32 *height);
+void vulkan_framebuffer_destroy(vulkan_context *context, vulkan_framebuffer *framebuffer);

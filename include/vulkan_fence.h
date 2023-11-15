@@ -20,20 +20,16 @@
 
 
 #pragma once
+#include <vulkan_types.h>
 
-#include <defines.h>
+void vulkan_fence_create(vulkan_context *context,
+                         b8 create_signaled,
+                         vulkan_fence *out_fence);
 
-struct game;  // Forward declaration
+void vulkan_fence_destroy(vulkan_context *context, vulkan_fence *fence);
 
-typedef struct {
-  i16 start_pos_x;
-  i16 start_pos_y;
-  i16 start_width;
-  i16 start_height;
-  char *name;
-} application_config;
+b8 vulkan_fence_wait(vulkan_context *context,
+                     vulkan_fence *fence,
+                     u64 timeout);
 
-KAPI b8 application_create(struct game *game_inst);
-KAPI b8 application_run(void);
-
-void application_set_framebuffer_size(u32 *width, u32 *height);
+void vulkan_fence_reset(vulkan_context *context, vulkan_fence *fence);

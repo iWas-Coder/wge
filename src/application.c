@@ -47,7 +47,11 @@ typedef struct {
 static application_state app_state;
 static b8 initialized = FALSE;
 
-b8 application_on_event(u16 code, void *sender, void *listener_inst, event_context context);
+void application_set_framebuffer_size(u32 *width, u32 *height) {
+  *width = app_state.width;
+  *height = app_state.height;
+}
+
 b8 application_on_event(u16 code, void *sender, void *listener_inst, event_context context) {
   (void) sender;         // Unused parameter
   (void) listener_inst;  // Unused parameter
@@ -61,7 +65,6 @@ b8 application_on_event(u16 code, void *sender, void *listener_inst, event_conte
   return FALSE;
 }
 
-b8 application_on_key(u16 code, void *sender, void *listener_inst, event_context context);
 b8 application_on_key(u16 code, void *sender, void *listener_inst, event_context context) {
   (void) sender;         // Unused parameter
   (void) listener_inst;  // Unused parameter

@@ -38,9 +38,9 @@ Linux and Windows.
 
 ** Tech stack
 
-- Language: C (*gnu17* - *ISO C 2017* [~ISO/IEC 9899:2018~] with *GNU extensions*)
-- Compiler: Clang (v16)
-- Vulkan (v1.3.x)
+- *Language:* C (*gnu17* - *ISO C 2017* [ ~ISO/IEC 9899:2018~ ] with *GNU extensions*)
+- *Compiler:* GCC, Clang, MinGW-w64-GCC
+- *Graphics API:* Vulkan
 
 ** Project structure
 

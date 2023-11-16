@@ -55,7 +55,14 @@ LRESULT CALLBACK win32_process_message(HWND hwnd, u32 msg, WPARAM w_param, LPARA
     PostQuitMessage(0);
     return 0;
   case WM_SIZE: {
-    // TODO: Fire an event for window resize
+    RECT r;
+    GetClientRect(hwnd, &r);
+    u32 width = r.right - r.left;
+    u32 height = r.bottom - r.top;
+    event_context context = {
+      .data.u16 = { (u16) width, (u16) height }
+    };
+    event_fire(EVENT_CODE_RESIZED, 0, context);
   } break;
   case WM_KEYDOWN:
   case WM_SYSKEYDOWN:

@@ -87,6 +87,38 @@ b8 application_on_key(u16 code, void *sender, void *listener_inst, event_context
   return FALSE;
 }
 
+b8 application_on_resized(u16 code, void *sender, void *listener_inst, event_context context) {
+  (void) sender;         // Unused parameter
+  (void) listener_inst;  // Unused parameter
+
+  if (code == EVENT_CODE_RESIZED) {
+    u16 width = context.data.u16[0];
+    u16 height = context.data.u16[1];
+    if (width != app_state.width || height != app_state.height) {
+      KDEBUG("Window resized :: %hux%hu -> %hux%hu",
+             app_state.width, app_state.height,
+             width, height);
+      app_state.width = width;
+      app_state.height = height;
+
+      // Minimize window
+      if (!width || !height) {
+        KINFO("Application suspended (due to window minimize)");
+        app_state.is_suspended = TRUE;
+        return TRUE;
+      }
+      // Restore window
+      else if (app_state.is_suspended) {
+        KINFO("Application resumed (due to window restore)");
+        app_state.is_suspended = FALSE;
+      }
+      app_state.game_inst->on_resize(app_state.game_inst, width, height);
+      renderer_on_resized(width, height);
+    }
+  }
+  return FALSE;
+}
+
 b8 application_create(game *game_inst) {
   if (initialized) {
     KERROR("Tried to create the application multiple times");
@@ -110,6 +142,7 @@ b8 application_create(game *game_inst) {
   event_register(EVENT_CODE_APPLICATION_QUIT, 0, application_on_event);
   event_register(EVENT_CODE_KEY_PRESSED, 0, application_on_key);
   event_register(EVENT_CODE_KEY_RELEASED, 0, application_on_key);
+  event_register(EVENT_CODE_RESIZED, 0, application_on_resized);
 
   if (!platform_startup(&app_state.platform,
                         game_inst->app_config.name,
@@ -196,6 +229,7 @@ b8 application_run(void) {
   event_unregister(EVENT_CODE_APPLICATION_QUIT, 0, application_on_event);
   event_unregister(EVENT_CODE_KEY_PRESSED, 0, application_on_key);
   event_unregister(EVENT_CODE_KEY_RELEASED, 0, application_on_key);
+  event_unregister(EVENT_CODE_RESIZED, 0, application_on_resized);
 
   event_shutdown();
   input_shutdown();

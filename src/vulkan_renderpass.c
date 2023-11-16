@@ -28,16 +28,19 @@ void vulkan_renderpass_create(vulkan_context *context,
                               f32 r, f32 g, f32 b, f32 a,
                               f32 depth,
                               u32 stencil) {
-  (void) x;        // Unused parameter
-  (void) y;        // Unused parameter
-  (void) w;        // Unused parameter
-  (void) h;        // Unused parameter
-  (void) r;        // Unused parameter
-  (void) g;        // Unused parameter
-  (void) b;        // Unused parameter
-  (void) a;        // Unused parameter
-  (void) depth;    // Unused parameter
-  (void) stencil;  // Unused parameter
+  // Copy dimensions
+  out_renderpass->x = x;
+  out_renderpass->y = y;
+  out_renderpass->w = w;
+  out_renderpass->h = h;
+  // Copy RGBA info
+  out_renderpass->r = r;
+  out_renderpass->g = g;
+  out_renderpass->b = b;
+  out_renderpass->a = a;
+  // Copy depth & stencil info
+  out_renderpass->depth = depth;
+  out_renderpass->stencil = stencil;
 
   // Color attachment
   VkAttachmentDescription color_attachment = {

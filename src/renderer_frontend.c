@@ -44,8 +44,8 @@ void renderer_shutdown(void) {
 }
 
 void renderer_on_resized(u16 width, u16 height) {
-  (void) width;  // Unused parameter
-  (void) height;  // Unused parameter
+  if (backend) backend->resized(backend, width, height);
+  else KWARN("renderer_on_resized :: Renderer backend does not exist");
 }
 
 b8 renderer_begin_frame(f32 delta_time) {

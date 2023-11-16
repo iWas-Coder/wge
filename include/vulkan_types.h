@@ -127,6 +127,8 @@ typedef struct {
   vulkan_device device;
   u32 framebuffer_width;
   u32 framebuffer_height;
+  u64 framebuffer_size_generation;
+  u64 framebuffer_size_last_generation;
   vulkan_swapchain swapchain;
   vulkan_renderpass main_renderpass;
   vulkan_command_buffer *graphics_command_buffers;

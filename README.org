@@ -89,6 +89,14 @@ mindmap
 
 (...)
 
+*** Graphics pipeline
+
+(...)
+
+*** Shader modules
+
+(...)
+
 * Build
 
 WGE ships with a ready-to-go ~Makefile~, so *GNU Make* is needed in order to build the engine. It is as simple as doing:

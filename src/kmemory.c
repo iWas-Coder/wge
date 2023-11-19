@@ -33,6 +33,7 @@ typedef struct {
 static const char *memory_tag_strings[] = {
   "UNKNOWN          ",
   "ARRAY            ",
+  "LINEAR_ALLOCATOR ",
   "DARRAY           ",
   "DICT             ",
   "RING_QUEUE       ",

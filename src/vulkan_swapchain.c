@@ -32,7 +32,6 @@ void create(vulkan_context *context, u32 width, u32 height, vulkan_swapchain *sw
                                         &context->device.swapchain_support);
 
   VkExtent2D swapchain_extent = { width, height };
-  swapchain->max_frames_in_flight = 2;  // triple-buffering
 
   // Select surface format
   b8 found = false;
@@ -101,6 +100,8 @@ void create(vulkan_context *context, u32 width, u32 height, vulkan_swapchain *sw
       image_count > context->device.swapchain_support.capabilities.maxImageCount) {
     image_count = context->device.swapchain_support.capabilities.maxImageCount;
   }
+
+  swapchain->max_frames_in_flight = image_count - 1;  // double of triple buffering
 
   // Swapchain create info
   VkSwapchainCreateInfoKHR swapchain_create_info = {

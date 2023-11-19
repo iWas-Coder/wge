@@ -19,10 +19,11 @@
  */
 
 
+#include <stdio.h>
+#include <string.h>
+#include <stdarg.h>
 #include <kstring.h>
 #include <kmemory.h>
-
-#include <string.h>
 
 u64 kstrlen(const char *str) {
   return strlen(str);
@@ -37,4 +38,22 @@ char *kstrdup(const char *str) {
 
 b8 kstrcmp(const char *s1, const char *s2) {
   return strcmp(s1, s2) == 0;
+}
+
+i32 kstrfmt(char *dest, const char *format, ...) {
+  if (!dest) return -1;
+  __builtin_va_list arg_ptr;
+  va_start(arg_ptr, format);
+  i32 n_bytes = kstrfmt_v(dest, format, arg_ptr);
+  va_end(arg_ptr);
+  return n_bytes;
+}
+
+i32 kstrfmt_v(char *dest, const char *format, void *va_list) {
+  if (!dest) return -1;
+  char buf[FORMAT_BUF_SIZE];
+  i32 n_bytes = vsnprintf(buf, FORMAT_BUF_SIZE, format, va_list);
+  buf[n_bytes] = 0;
+  kcopy_memory(dest, buf, n_bytes + 1);
+  return n_bytes;
 }

@@ -23,6 +23,11 @@
 
 #include <defines.h>
 
+#define FORMAT_BUF_SIZE 32000  // 32K character limit
+
 KAPI u64 kstrlen(const char *str);
 KAPI char *kstrdup(const char *str);
 KAPI b8 kstrcmp(const char *s1, const char *s2);
+
+KAPI i32 kstrfmt(char *dest, const char *format, ...);
+KAPI i32 kstrfmt_v(char *dest, const char *format, void *va_list);

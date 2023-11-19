@@ -70,6 +70,23 @@ LRESULT CALLBACK win32_process_message(HWND hwnd, u32 msg, WPARAM w_param, LPARA
   case WM_SYSKEYUP: {
     b8 pressed = (msg == WM_KEYDOWN || msg == WM_SYSKEYDOWN);
     keys key = (u16) w_param;
+
+    // ALT is being pressed
+    if (w_param == VK_MENU) {
+      if (GetKeyState(VK_RMENU) & 0x8000) key = KEY_RALT;
+      else if (GetKeyState(VK_LMENU) & 0x8000) key = KEY_LALT;
+    }
+    // SHIFT is being pressed
+    else if (w_param == VK_SHIFT) {
+      if (GetKeyState(VK_RSHIFT) & 0x8000) key = KEY_RSHIFT;
+      else if (GetKeyState(VK_LSHIFT) & 0x8000) key = KEY_LSHIFT;
+    }
+    // CONTROL is being pressed
+    else if (w_param == VK_CONTROL) {
+      if (GetKeyState(VK_RCONTROL) & 0x8000) key = KEY_RCONTROL;
+      else if (GetKeyState(VK_LCONTROL) & 0x8000) key = KEY_LCONTROL;
+    }
+
     input_process_key(key, pressed);
   } break;
   case WM_MOUSEMOVE: {

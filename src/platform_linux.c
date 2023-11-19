@@ -138,7 +138,8 @@ keys translate_keycode(u32 xcb_keycode) {
   case XK_Shift_R:      return KEY_RSHIFT;
   case XK_Control_L:    return KEY_LCONTROL;
   case XK_Control_R:    return KEY_RCONTROL;
-  case XK_Menu:         return KEY_RMENU;
+  case XK_Alt_L:        return KEY_LALT;
+  case XK_Alt_R:        return KEY_RALT;
   case XK_semicolon:    return KEY_SEMICOLON;
   case XK_plus:         return KEY_PLUS;
   case XK_comma:        return KEY_COMMA;

@@ -38,7 +38,7 @@ typedef float f32;
 typedef double f64;
 
 // Boolean types
-typedef char b8;
+typedef _Bool b8;
 typedef int b32;
 
 // Static assertions definition
@@ -65,8 +65,8 @@ STATIC_ASSERT(sizeof(f32) == 4, "ERROR: f32 :: 4B");
 STATIC_ASSERT(sizeof(f64) == 8, "ERROR: f64 :: 8B");
 
 // Boolean values
-#define TRUE 1
-#define FALSE 0
+#define true 1
+#define false 0
 
 // Platform detection
 #if defined(WIN32) || defined(_WIN32) || defined(__WIN32__)

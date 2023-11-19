@@ -141,9 +141,9 @@ KINLINE Vector2 vec2_normalize_get(Vector2 v) {
 }
 
 KINLINE b8 vec2_cmp(Vector2 u, Vector2 v, f32 epsilon) {
-  if (kabs(u.x - v.x) > epsilon) return FALSE;
-  if (kabs(u.y - v.y) > epsilon) return FALSE;
-  return TRUE;
+  if (kabs(u.x - v.x) > epsilon) return false;
+  if (kabs(u.y - v.y) > epsilon) return false;
+  return true;
 }
 
 KINLINE f32 vec2_distance(Vector2 u, Vector2 v) {
@@ -239,10 +239,10 @@ KINLINE Vector3 vec3_normalize_get(Vector3 v) {
 }
 
 KINLINE b8 vec3_cmp(Vector3 u, Vector3 v, f32 epsilon) {
-  if (kabs(u.x - v.x) > epsilon) return FALSE;
-  if (kabs(u.y - v.y) > epsilon) return FALSE;
-  if (kabs(u.z - v.z) > epsilon) return FALSE;
-  return TRUE;
+  if (kabs(u.x - v.x) > epsilon) return false;
+  if (kabs(u.y - v.y) > epsilon) return false;
+  if (kabs(u.z - v.z) > epsilon) return false;
+  return true;
 }
 
 KINLINE f32 vec3_distance(Vector3 u, Vector3 v) {

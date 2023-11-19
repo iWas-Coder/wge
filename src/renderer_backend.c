@@ -34,7 +34,7 @@ b8 renderer_backend_create(renderer_backend_type type,
     out_renderer_backend->resized = vulkan_renderer_backend_on_resized;
     out_renderer_backend->begin_frame = vulkan_renderer_backend_begin_frame;
     out_renderer_backend->end_frame = vulkan_renderer_backend_end_frame;
-    return TRUE;
+    return true;
   case RENDERER_BACKEND_TYPE_OPENGL:
     // TODO
     break;
@@ -43,7 +43,7 @@ b8 renderer_backend_create(renderer_backend_type type,
     break;
   }
 
-  return FALSE;
+  return false;
 }
 void renderer_backend_destroy(renderer_backend *renderer_backend) {
   renderer_backend->initialize = 0;

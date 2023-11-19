@@ -97,7 +97,7 @@ b8 physical_device_meets_requirements(VkPhysicalDevice device,
   if (requirements->discrete_gpu) {
     if (properties->deviceType != VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU) {
       KINFO("Device skipped (no discrete GPU)");
-      return FALSE;
+      return false;
     }
   }
 
@@ -166,7 +166,7 @@ b8 physical_device_meets_requirements(VkPhysicalDevice device,
               MEMORY_TAG_RENDERER);
       }
       KINFO("Device skipped (no swapchain)");
-      return FALSE;
+      return false;
     }
 
     // Device extensions
@@ -186,10 +186,10 @@ b8 physical_device_meets_requirements(VkPhysicalDevice device,
                                                       available_extensions));
         u32 required_extension_count = darray_length(requirements->extensions);
         for (u32 i = 0; i < required_extension_count; ++i) {
-          b8 found = FALSE;
+          b8 found = false;
           for (u32 j = 0; i < available_extension_count; ++j) {
             if (kstrcmp(requirements->extensions[i], available_extensions[j].extensionName)) {
-              found = TRUE;
+              found = true;
               break;
             }
           }
@@ -198,7 +198,7 @@ b8 physical_device_meets_requirements(VkPhysicalDevice device,
             kfree(available_extensions,
                   sizeof(VkExtensionProperties) * available_extension_count,
                   MEMORY_TAG_RENDERER);
-            return FALSE;
+            return false;
           }
         }
       }
@@ -210,13 +210,13 @@ b8 physical_device_meets_requirements(VkPhysicalDevice device,
     // Sampler anisotropy
     if (requirements->sampler_anisotropy && !features->samplerAnisotropy) {
       KINFO("Device skipped (no samplerAnisotropy)");
-      return FALSE;
+      return false;
     }
 
     // All requirements met
-    return TRUE;
+    return true;
   }
-  return FALSE;
+  return false;
 }
 
 b8 select_physical_device(vulkan_context *context) {
@@ -224,7 +224,7 @@ b8 select_physical_device(vulkan_context *context) {
   VK_CHECK(vkEnumeratePhysicalDevices(context->instance, &c, 0));
   if (!c) {
     KFATAL("No devices supporting Vulkan were found");
-    return FALSE;
+    return false;
   }
   VkPhysicalDevice physical_devices[c];
   VK_CHECK(vkEnumeratePhysicalDevices(context->instance, &c, physical_devices));
@@ -238,12 +238,12 @@ b8 select_physical_device(vulkan_context *context) {
     vkGetPhysicalDeviceMemoryProperties(physical_devices[i], &memory);
 
     vulkan_physical_device_requirements requirements = {
-      .discrete_gpu = TRUE,
-      .graphics = TRUE,
-      .present = TRUE,
-      .compute = TRUE,
-      .transfer = TRUE,
-      .sampler_anisotropy = TRUE,
+      .discrete_gpu = true,
+      .graphics = true,
+      .present = true,
+      .compute = true,
+      .transfer = true,
+      .sampler_anisotropy = true,
       .extensions = darray_create(const char *)
     };
     darray_push(requirements.extensions, &VK_KHR_SWAPCHAIN_EXTENSION_NAME);
@@ -312,15 +312,15 @@ b8 select_physical_device(vulkan_context *context) {
   // Ensure a device was selected
   if (!context->device.physical_device) {
     KERROR("No physical devices were found meeting the requirements");
-    return FALSE;
+    return false;
   }
   KINFO("Physical device selected");
-  return TRUE;
+  return true;
 }
 
 b8 vulkan_device_create(vulkan_context *context) {
   // Select physical device
-  if (!select_physical_device(context)) return FALSE;
+  if (!select_physical_device(context)) return false;
 
   // Create logical device
   b8 present_shares_graphics_queue = (context->device.graphics == context->device.present);
@@ -407,7 +407,7 @@ b8 vulkan_device_create(vulkan_context *context) {
                                &context->device.graphics_command_pool));
   KINFO("Graphics command pool created");
 
-  return TRUE;
+  return true;
 }
 
 void vulkan_device_destroy(vulkan_context *context) {
@@ -467,8 +467,8 @@ b8 vulkan_device_detect_depth_format(vulkan_device *device) {
     vkGetPhysicalDeviceFormatProperties(device->physical_device, candidates[i], &properties);
     if (((properties.linearTilingFeatures | properties.optimalTilingFeatures) & flags) == flags) {
       device->depth_format = candidates[i];
-      return TRUE;
+      return true;
     }
   }
-  return FALSE;
+  return false;
 }

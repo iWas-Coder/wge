@@ -50,7 +50,7 @@ LRESULT CALLBACK win32_process_message(HWND hwnd, u32 msg, WPARAM w_param, LPARA
     return 1;
   case WM_CLOSE:
     event_fire(EVENT_CODE_APPLICATION_QUIT, 0, (event_context) {0});
-    return TRUE;
+    return true;
   case WM_DESTROY:
     PostQuitMessage(0);
     return 0;
@@ -137,7 +137,7 @@ b8 platform_startup(platform_state *plat_state, const char *application_name, i3
   if (!RegisterClassA(&wc)) {
     MessageBoxA(NULL, "Window registration failed", "ERROR", MB_ICONEXCLAMATION | MB_OK);
     KFATAL("Window registration failed");
-    return FALSE;
+    return false;
   }
 
   // Client area
@@ -175,7 +175,7 @@ b8 platform_startup(platform_state *plat_state, const char *application_name, i3
   if (!handle) {
     MessageBoxA(NULL, "Window creation failed", "ERROR", MB_ICONEXCLAMATION | MB_OK);
     KFATAL("Window creation failed");
-    return FALSE;
+    return false;
   }
   else state->hwnd = handle;
 
@@ -191,7 +191,7 @@ b8 platform_startup(platform_state *plat_state, const char *application_name, i3
   clock_frequency = 1.0f / (f64) frequency.QuadPart;
   QueryPerformanceCounter(&start_time);
 
-  return TRUE
+  return true
     }
 
 void platform_shutdown(platform_state *plat_state) {
@@ -208,7 +208,7 @@ b8 platform_pump_messages(platform_state *plat_state) {
     TranslateMessage(&message);
     DispatchMessage(&message);
   }
-  return TRUE;
+  return true;
 }
 
 void *platform_allocate(u64 size, b8 aligned) {
@@ -284,10 +284,10 @@ b8 platform_create_vulkan_surface(platform_state *plat_state, vulkan_context *co
                                             &state->surface);
   if (result != VK_SUCCESS) {
     KFATAL("Failed to create surface");
-    return FALSE;
+    return false;
   }
   context->surface = state->surface;
-  return TRUE;
+  return true;
 }
 
 #endif  // KPLATFORM_WINDOWS

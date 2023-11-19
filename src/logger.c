@@ -28,7 +28,7 @@
 
 b8 initialize_logging(void) {
   // TODO: create log file
-  return TRUE;
+  return true;
 }
 
 void shutdown_logging(void) {

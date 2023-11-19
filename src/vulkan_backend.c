@@ -93,7 +93,7 @@ void create_command_buffers(renderer_backend *backend) {
     kzero_memory(&context.graphics_command_buffers[i], sizeof(vulkan_command_buffer));
     vulkan_command_buffer_allocate(&context,
                                    context.device.graphics_command_pool,
-                                   TRUE,
+                                   true,
                                    &context.graphics_command_buffers[i]);
   }
   KDEBUG("Vulkan command buffers created");
@@ -123,13 +123,13 @@ void regenerate_framebuffers(renderer_backend *backend,
 b8 recreate_swapchain(renderer_backend *backend) {
   if (context.recreating_swapchain) {
     KDEBUG("recreate_swapchain :: Already recreating");
-    return FALSE;
+    return false;
   }
   if (context.framebuffer_width == 0 || context.framebuffer_height == 0) {
     KDEBUG("recreate_swapchain :: Window is too small to be drawn to");
-    return FALSE;
+    return false;
   }
-  context.recreating_swapchain = TRUE;
+  context.recreating_swapchain = true;
 
   vkDeviceWaitIdle(context.device.logical_device);
   for (u32 i = 0; i < context.swapchain.image_count; ++i) context.images_in_flight[i] = 0;
@@ -172,8 +172,8 @@ b8 recreate_swapchain(renderer_backend *backend) {
   regenerate_framebuffers(backend, &context.swapchain, &context.main_renderpass);
   create_command_buffers(backend);
 
-  context.recreating_swapchain = FALSE;
-  return TRUE;
+  context.recreating_swapchain = false;
+  return true;
 }
 
 b8 vulkan_renderer_backend_initialize(renderer_backend *backend,
@@ -232,16 +232,16 @@ b8 vulkan_renderer_backend_initialize(renderer_backend *backend,
   // Verify if all required ones are available
   for (u32 i = 0; i < vk_layers_count; ++i) {
     KDEBUG("%s", vk_layers[i]);
-    b8 found = FALSE;
+    b8 found = false;
     for (u32 j = 0; j < available_layer_count; ++j) {
       if (kstrcmp(vk_layers[i], available_layers[j].layerName)) {
-        found = TRUE;
+        found = true;
         break;
       }
     }
     if (!found) {
       KFATAL("Missing layer: %s", vk_layers[i]);
-      return FALSE;
+      return false;
     }
   }
   KDEBUG("Validation layers list verified");
@@ -285,14 +285,14 @@ b8 vulkan_renderer_backend_initialize(renderer_backend *backend,
   // Surface creation
   if (!platform_create_vulkan_surface(plat_state, (struct vulkan_context *) &context)) {
     KERROR("Failed to create surface");
-    return FALSE;
+    return false;
   }
   KDEBUG("Vulkan surface created");
 
   // Create device
   if (!vulkan_device_create(&context)) {
     KERROR("Failed to create device");
-    return FALSE;
+    return false;
   }
 
   // Create swapchain
@@ -339,13 +339,13 @@ b8 vulkan_renderer_backend_initialize(renderer_backend *backend,
                       context.allocator,
                       &context.queue_complete_semaphores[i]);
     // Fences
-    vulkan_fence_create(&context, TRUE, &context.in_flight_fences[i]);
+    vulkan_fence_create(&context, true, &context.in_flight_fences[i]);
   }
   context.images_in_flight = darray_reserve(vulkan_fence, context.swapchain.image_count);
   for (u32 i = 0; i < context.swapchain.image_count; ++i) context.images_in_flight[i] = 0;
 
   KINFO("Vulkan renderer initialized");
-  return TRUE;
+  return true;
 }
 
 void vulkan_renderer_backend_shutdown(renderer_backend *backend) {
@@ -448,29 +448,29 @@ b8 vulkan_renderer_backend_begin_frame(renderer_backend *backend, f32 delta_time
   if (context.recreating_swapchain) {
     VkResult result = vkDeviceWaitIdle(device->logical_device);
     if (!vulkan_result_is_success(result)) {
-      KERROR("vulkan_renderer_backend_begin_frame (1) :: %s", vulkan_result_string(result, TRUE));
-      return FALSE;
+      KERROR("vulkan_renderer_backend_begin_frame (1) :: %s", vulkan_result_string(result, true));
+      return false;
     }
     KINFO("Swapchain recreated");
-    return FALSE;
+    return false;
   }
 
   if (context.framebuffer_size_generation != context.framebuffer_size_last_generation) {
     VkResult result = vkDeviceWaitIdle(device->logical_device);
     if (!vulkan_result_is_success(result)) {
-      KERROR("vulkan_renderer_backend_begin_frame (2) :: %s", vulkan_result_string(result, TRUE));
-      return FALSE;
+      KERROR("vulkan_renderer_backend_begin_frame (2) :: %s", vulkan_result_string(result, true));
+      return false;
     }
-    if (!recreate_swapchain(backend)) return FALSE;
+    if (!recreate_swapchain(backend)) return false;
     KINFO("Swapchain resized");
-    return FALSE;
+    return false;
   }
 
   if (!vulkan_fence_wait(&context,
                          &context.in_flight_fences[context.current_frame],
                          UINT64_MAX)) {
     KWARN("vulkan_fence_wait :: in-flight fence wait operation failed");
-    return FALSE;
+    return false;
   }
 
   if (!vulkan_swapchain_get_next_image_index(&context,
@@ -478,11 +478,11 @@ b8 vulkan_renderer_backend_begin_frame(renderer_backend *backend, f32 delta_time
                                              UINT64_MAX,
                                              context.image_available_semaphores[context.current_frame],
                                              0,
-                                             &context.image_index)) return FALSE;
+                                             &context.image_index)) return false;
 
   vulkan_command_buffer *command_buffer = &context.graphics_command_buffers[context.image_index];
   vulkan_command_buffer_reset(command_buffer);
-  vulkan_command_buffer_begin(command_buffer, FALSE, FALSE, FALSE);
+  vulkan_command_buffer_begin(command_buffer, false, false, false);
 
   VkViewport viewport = {
     .x = 0.0f,
@@ -510,7 +510,7 @@ b8 vulkan_renderer_backend_begin_frame(renderer_backend *backend, f32 delta_time
                           &context.main_renderpass,
                           context.swapchain.framebuffers[context.image_index].handle);
 
-  return TRUE;
+  return true;
 }
 
 b8 vulkan_renderer_backend_end_frame(renderer_backend *backend, f32 delta_time) {
@@ -549,8 +549,8 @@ b8 vulkan_renderer_backend_end_frame(renderer_backend *backend, f32 delta_time) 
                                   &submit_info,
                                   context.in_flight_fences[context.current_frame].handle);
   if (result != VK_SUCCESS) {
-    KERROR("vulkan_renderer_backend_end_frame :: %s", vulkan_result_string(result, TRUE));
-    return FALSE;
+    KERROR("vulkan_renderer_backend_end_frame :: %s", vulkan_result_string(result, true));
+    return false;
   }
   vulkan_command_buffer_update(command_buffer);
 
@@ -562,5 +562,5 @@ b8 vulkan_renderer_backend_end_frame(renderer_backend *backend, f32 delta_time) 
                            context.queue_complete_semaphores[context.current_frame],
                            context.image_index);
 
-  return TRUE;
+  return true;
 }

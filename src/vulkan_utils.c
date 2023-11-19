@@ -177,9 +177,9 @@ static const VkResultInfo error_result_info[] = {
 
 b8 vulkan_result_is_success(VkResult result) {
   for (u32 i = 0; i < ARRAY_LEN(success_result_info); ++i) {
-    if (success_result_info[i].result == result) return TRUE;
+    if (success_result_info[i].result == result) return true;
   }
-  return FALSE;
+  return false;
 }
 
 const char *vulkan_result_string(VkResult result, b8 get_extended) {

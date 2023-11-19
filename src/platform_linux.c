@@ -213,7 +213,7 @@ b8 platform_startup(platform_state *plat_state, const char *application_name, i3
   state->connection = XGetXCBConnection(state->display);
   if (xcb_connection_has_error(state->connection)) {
     KFATAL("Failed to connect to X server via XCB");
-    return FALSE;
+    return false;
   }
   // Get data from X
   const struct xcb_setup_t *setup = xcb_get_setup(state->connection);
@@ -291,10 +291,10 @@ b8 platform_startup(platform_state *plat_state, const char *application_name, i3
   i32 stream_result = xcb_flush(state->connection);
   if (stream_result <= 0) {
     KFATAL("Error when flushing the stream: %d", stream_result);
-    return FALSE;
+    return false;
   }
 
-  return TRUE;
+  return true;
 }
 
 void platform_shutdown(platform_state *plat_state) {
@@ -306,7 +306,7 @@ b8 platform_pump_messages(platform_state *plat_state) {
   internal_state *state = (internal_state *) plat_state->internal_state;
   xcb_generic_event_t *event = NULL;
   xcb_client_message_event_t *cm;
-  b8 quit_flagged = FALSE;
+  b8 quit_flagged = false;
 
   do {
     event = xcb_poll_for_event(state->connection);
@@ -359,7 +359,7 @@ b8 platform_pump_messages(platform_state *plat_state) {
     } break;
     case XCB_CLIENT_MESSAGE: {
       cm = (xcb_client_message_event_t *) event;
-      if (cm->data.data32[0] == state->wm_delete_win) quit_flagged = TRUE;
+      if (cm->data.data32[0] == state->wm_delete_win) quit_flagged = true;
     } break;
     default: break;
     }
@@ -452,10 +452,10 @@ b8 platform_create_vulkan_surface(platform_state *plat_state, vulkan_context *co
                                           &state->surface);
   if (result != VK_SUCCESS) {
     KFATAL("Failed to create surface");
-    return FALSE;
+    return false;
   }
   context->surface = state->surface;
-  return TRUE;
+  return true;
 }
 
 #endif  // KPLATFORM_LINUX

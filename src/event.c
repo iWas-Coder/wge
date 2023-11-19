@@ -38,15 +38,15 @@ typedef struct {
   event_code_entry registered[MAX_MESSAGE_CODES];
 } event_system_state;
 
-static b8 is_initialized = FALSE;
+static b8 is_initialized = false;
 static event_system_state state;
 
 b8 event_initialize(void) {
-  if (is_initialized) return FALSE;
-  is_initialized = FALSE;
+  if (is_initialized) return false;
+  is_initialized = false;
   kzero_memory(&state, sizeof(state));
-  is_initialized = TRUE;
-  return TRUE;
+  is_initialized = true;
+  return true;
 }
 
 void event_shutdown(void) {
@@ -59,7 +59,7 @@ void event_shutdown(void) {
 }
 
 b8 event_register(u16 code, void *listener, PFN_on_event on_event) {
-  if (!is_initialized) return FALSE;
+  if (!is_initialized) return false;
 
   if (!state.registered[code].events) {
     state.registered[code].events = darray_create(registered_event);
@@ -69,7 +69,7 @@ b8 event_register(u16 code, void *listener, PFN_on_event on_event) {
   for (u64 i = 0; i < n_registered; ++i) {
     if (state.registered[code].events[i].listener == listener) {
       // TODO: throw warning
-      return FALSE;
+      return false;
     }
   }
 
@@ -77,15 +77,15 @@ b8 event_register(u16 code, void *listener, PFN_on_event on_event) {
   event.listener = listener;
   event.callback = on_event;
   darray_push(state.registered[code].events, event);
-  return TRUE;
+  return true;
 }
 
 b8 event_unregister(u16 code, void *listener, PFN_on_event on_event) {
-  if (!is_initialized) return FALSE;
+  if (!is_initialized) return false;
 
   if (!state.registered[code].events) {
     // TODO: throw warning
-    return FALSE;
+    return false;
   }
 
   u64 n_registered = darray_length(state.registered[code].events);
@@ -94,24 +94,24 @@ b8 event_unregister(u16 code, void *listener, PFN_on_event on_event) {
     if (e.listener == listener && e.callback == on_event) {
       registered_event popped_e;
       darray_pop_at(state.registered[code].events, i, &popped_e);
-      return TRUE;
+      return true;
     }
   }
-  return FALSE;
+  return false;
 }
 
 b8 event_fire(u16 code, void *sender, event_context context) {
-  if (!is_initialized) return FALSE;
+  if (!is_initialized) return false;
 
   if (!state.registered[code].events) {
     // TODO: throw warning
-    return FALSE;
+    return false;
   }
 
   u64 n_registered = darray_length(state.registered[code].events);
   for (u64 i = 0; i < n_registered; ++i) {
     registered_event e = state.registered[code].events[i];
-    if (e.callback(code, sender, e.listener, context)) return TRUE;
+    if (e.callback(code, sender, e.listener, context)) return true;
   }
-  return FALSE;
+  return false;
 }

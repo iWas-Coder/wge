@@ -23,7 +23,6 @@
 
 #include <stdlib.h>
 #include <logger.h>
-#include <kmemory.h>
 #include <game_types.h>
 #include <application.h>
 
@@ -31,8 +30,6 @@ extern b8 create_game(game *out_game);
 
 // App's main entrypoint
 int main(void) {
-  initialize_memory();
-
   game game_inst;
 
   if (!create_game(&game_inst)) {
@@ -59,8 +56,6 @@ int main(void) {
     KINFO("Application closed abruptly");
     return EXIT_FAILURE;
   }
-
-  shutdown_memory();
 
   return EXIT_SUCCESS;
 }

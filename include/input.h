@@ -152,8 +152,8 @@ typedef enum {
   KEYS_MAX_KEYS
 } keys;
 
-void input_initialize(void);
-void input_shutdown(void);
+void input_system_initialize(u64* memory_requirements, void* state);
+void input_system_shutdown(void *state);
 void input_update(f64 delta_time);
 
 // Keys (keyboard input)

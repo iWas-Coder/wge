@@ -176,11 +176,7 @@ b8 recreate_swapchain(renderer_backend *backend) {
   return true;
 }
 
-b8 vulkan_renderer_backend_initialize(renderer_backend *backend,
-                                      const char *application_name,
-                                      struct platform_state *plat_state) {
-  (void) plat_state;  // Unused parameter
-
+b8 vulkan_renderer_backend_initialize(renderer_backend *backend, const char *application_name) {
   // Set the `find_memory_index` function pointer to its definition
   context.find_memory_index = find_memory_index;
 
@@ -283,7 +279,7 @@ b8 vulkan_renderer_backend_initialize(renderer_backend *backend,
 #endif
 
   // Surface creation
-  if (!platform_create_vulkan_surface(plat_state, (struct vulkan_context *) &context)) {
+  if (!platform_create_vulkan_surface((struct vulkan_context *) &context)) {
     KERROR("Failed to create surface");
     return false;
   }

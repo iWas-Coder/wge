@@ -19,20 +19,35 @@
  */
 
 
+#include <stdio.h>
+#include <stdarg.h>
 #include <logger.h>
 #include <kstring.h>
 #include <platform.h>
 
-#include <stdio.h>
-#include <stdarg.h>
+typedef struct {
+  b8 initialized;
+} logger_system_state;
 
-b8 initialize_logging(void) {
+static logger_system_state *state_ptr;
+
+b8 initialize_logging(u64 *memory_requirements, void *state) {
+  *memory_requirements = sizeof(logger_system_state);
+  if (!state) return true;
+
+  state_ptr = state;
+  state_ptr->initialized = true;
+
   // TODO: create log file
   return true;
 }
 
-void shutdown_logging(void) {
+void shutdown_logging(void *state) {
+  (void) state;  // Unused parameter
+
   // TODO: cleanup logging (write queued entries)
+
+  state_ptr = 0;
 }
 
 void log_output(log_level level, const char *message, ...) {

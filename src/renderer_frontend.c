@@ -24,37 +24,51 @@
 #include <renderer_backend.h>
 #include <renderer_frontend.h>
 
-static renderer_backend *backend = 0;
+typedef struct {
+  renderer_backend backend;
+} renderer_system_state;
 
-b8 renderer_initialize(const char *application_name, struct platform_state *plat_state) {
-  backend = kallocate(sizeof(renderer_backend), MEMORY_TAG_RENDERER);
-  renderer_backend_create(RENDERER_BACKEND_TYPE_VULKAN, plat_state, backend);
-  backend->frame_number = 0;
+static renderer_system_state *state_ptr;
 
-  if (!backend->initialize(backend, application_name, plat_state)) {
+b8 renderer_system_initialize(u64 *memory_requirements,
+                              void *state,
+                              const char *application_name) {
+  *memory_requirements = sizeof(renderer_system_state);
+  if (!state) return true;
+  state_ptr = state;
+
+  renderer_backend_create(RENDERER_BACKEND_TYPE_VULKAN, &state_ptr->backend);
+  state_ptr->backend.frame_number = 0;
+
+  if (!state_ptr->backend.initialize(&state_ptr->backend, application_name)) {
     KFATAL("Renderer backend initialization failed. Shutting down the engine...");
     return false;
   }
   return true;
 }
 
-void renderer_shutdown(void) {
-  backend->shutdown(backend);
-  kfree(backend, sizeof(renderer_backend), MEMORY_TAG_RENDERER);
+void renderer_system_shutdown(void *state) {
+  (void) state;  // Unused parameter
+
+  if (!state_ptr) return;
+  state_ptr->backend.shutdown(&state_ptr->backend);
+  state_ptr = 0;
 }
 
 void renderer_on_resized(u16 width, u16 height) {
-  if (backend) backend->resized(backend, width, height);
+  if (state_ptr) state_ptr->backend.resized(&state_ptr->backend, width, height);
   else KWARN("renderer_on_resized :: Renderer backend does not exist");
 }
 
 b8 renderer_begin_frame(f32 delta_time) {
-  return backend->begin_frame(backend, delta_time);
+  if (!state_ptr) return false;
+  return state_ptr->backend.begin_frame(&state_ptr->backend, delta_time);
 }
 
 b8 renderer_end_frame(f32 delta_time) {
-  b8 result = backend->end_frame(backend, delta_time);
-  ++(backend->frame_number);
+  if (!state_ptr) return false;
+  b8 result = state_ptr->backend.end_frame(&state_ptr->backend, delta_time);
+  ++(state_ptr->backend.frame_number);
   return result;
 }
 

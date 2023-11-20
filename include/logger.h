@@ -44,8 +44,8 @@ typedef enum {
 
 #define LOG_MSG_SIZE 32000  // 32K character limit
 
-b8 initialize_logging(void);
-void shutdown_logging(void);
+b8 initialize_logging(u64 *memory_requirements, void *state);
+void shutdown_logging(void *state);
 
 KAPI void log_output(log_level level, const char *message, ...);
 

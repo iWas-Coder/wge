@@ -41,7 +41,11 @@ typedef struct {
   HINSTANCE h_instance;
   HWND hwnd;
   VkSurfaceKHR surface;
-} internal_state;
+  f64 clock_frequency;
+  LARGE_INTEGER start_time;
+} platform_state;
+
+static platform_state *state_ptr;
 
 LRESULT CALLBACK win32_process_message(HWND hwnd, u32 msg, WPARAM w_param, LPARAM l_param) {
   switch (msg) {
@@ -131,21 +135,27 @@ LRESULT CALLBACK win32_process_message(HWND hwnd, u32 msg, WPARAM w_param, LPARA
   return DefWindowProcA(hwnd, msg, w_param, l_param);
 }
 
-b8 platform_startup(platform_state *plat_state, const char *application_name, i32 x, i32 y, i32 width, i32 height) {
-  plat_state->internal_state = malloc(sizeof(internal_state));
-  internal_state *state = (internal_state *) plat_state->internal_state;
-
-  state->h_instance = GetModuleHandleA(0);
+b8 platform_system_startup(u64 *memory_requirements,
+                           void *state,
+                           const char *application_name,
+                           i32 x,
+                           i32 y,
+                           i32 width,
+                           i32 height) {
+  *memory_requirements = sizeof(platform_state);
+  if (!state) return true;
+  state_ptr = state;
+  state_ptr->h_instance = GetModuleHandleA(0);
 
   // Window class
-  HICON icon = LoadIcon(state->h_instance, IDI_APPLICATION);
+  HICON icon = LoadIcon(state_ptr->h_instance, IDI_APPLICATION);
   WNDCLASSA wc;
   memset(&wc, 0, sizeof(wc));
   wc.style = CS_DBLCLKS;
   wc.lpfnWndProc = win32_process_message;
   wc.cbClsExtra = 0;
   wc.cbWndExtra = 0;
-  wc.hInstance = state->h_instance;
+  wc.hInstance = state_ptr->h_instance;
   wc.hIcon = icon;
   wc.hCursor = LoadCursor(NULL, IDC_ARROW);
   wc.hbrBackground = NULL;
@@ -187,39 +197,38 @@ b8 platform_startup(platform_state *plat_state, const char *application_name, i3
   window_height += border_rect.bottom - border_rect.top;
 
   // Create window
-  HWND handle = CreateWindowExA(window_ex_style, WINDOW_CLASS, application_name, window_style, window_x, window_y, window_width, window_height, 0, 0, state->h_instance, 0);
+  HWND handle = CreateWindowExA(window_ex_style, WINDOW_CLASS, application_name, window_style, window_x, window_y, window_width, window_height, 0, 0, state_ptr->h_instance, 0);
 
   if (!handle) {
     MessageBoxA(NULL, "Window creation failed", "ERROR", MB_ICONEXCLAMATION | MB_OK);
     KFATAL("Window creation failed");
     return false;
   }
-  else state->hwnd = handle;
+  else state_ptr->hwnd = handle;
 
   // Show window
   // TODO: if the window should not accept input, this should be false.
   b32 should_activate = 1;
   i32 show_window_command_flags = should_activate ? SW_SHOW : SW_SHOWNOACTIVATE;
-  ShowWindow(state->hwnd, show_window_command_flags);
+  ShowWindow(state_ptr->hwnd, show_window_command_flags);
 
   // Clock
   LARGE_INTEGER frequency;
   QueryPerformanceFrequency(&frequency);
-  clock_frequency = 1.0f / (f64) frequency.QuadPart;
-  QueryPerformanceCounter(&start_time);
+  state_ptr->clock_frequency = 1.0f / (f64) frequency.QuadPart;
+  QueryPerformanceCounter(&state_ptr->start_time);
 
   return true
     }
 
-void platform_shutdown(platform_state *plat_state) {
-  internal_state *state = (internal_state *) plat_state->internal_state;
-  if (state->hwnd) {
-    DestroyWindow(state->hwnd);
-    state->hwnd = 0;
-  }
+void platform_system_shutdown(void *plat_state) {
+  if (!state_ptr || !state_ptr->hwnd) return;
+  DestroyWindow(state_ptr->hwnd);
+  state_ptr->hwnd = 0;
 }
 
-b8 platform_pump_messages(platform_state *plat_state) {
+b8 platform_pump_messages(void) {
+  if (!state_ptr) return true;
   MSG message;
   while (PeekMessageA(&message, NULL, 0, 0, PM_REMOVE)) {
     TranslateMessage(&message);
@@ -274,9 +283,10 @@ void platform_console_write_error(const char *message, u8 color) {
 }
 
 f64 platform_get_absolute_time(void) {
+  if (!state_ptr) return 0;
   LARGE_INTEGER now;
   QueryPerformanceCounter(&now);
-  return (f64) now.QuadPart * clock_frequency;
+  return (f64) now.QuadPart * state_ptr->clock_frequency;
 }
 
 void platform_sleep(u64 ms) {
@@ -287,23 +297,23 @@ void platform_get_required_extension_names(const char ***names_darray) {
   darray_push(*names_darray, &"VK_KHR_win32_surface");
 }
 
-b8 platform_create_vulkan_surface(platform_state *plat_state, vulkan_context *context) {
-  internal_state *state = (internal_state *) plat_state->internal_state;
+b8 platform_create_vulkan_surface(vulkan_context *context) {
+  if (!state_ptr) return false;
 
   VkWin32SurfaceCreateInfoKHR create_info = {
     .sType = VK_STRUCTURE_TYPE_WIN32_SURFACE_CREATE_INFO_KHR,
-    .hinstance = state->h_instance,
-    .hwnd = state->hwnd
+    .hinstance = state_ptr->h_instance,
+    .hwnd = state_ptr->hwnd
   };
   VkResult result = vkCreateWin32SurfaceKHR(context->instance,
                                             &create_info,
                                             context->allocator,
-                                            &state->surface);
+                                            &state_ptr->surface);
   if (result != VK_SUCCESS) {
     KFATAL("Failed to create surface");
     return false;
   }
-  context->surface = state->surface;
+  context->surface = state_ptr->surface;
   return true;
 }
 

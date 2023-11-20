@@ -25,6 +25,7 @@
 
 typedef struct game {
   void *state;
+  void *app_state;
   application_config app_config;
   b8 (*initialize)(struct game *game_inst);
   b8 (*update)(struct game *game_inst, f32 delta_time);

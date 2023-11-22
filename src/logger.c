@@ -19,26 +19,42 @@
  */
 
 
-#include <stdio.h>
 #include <stdarg.h>
 #include <logger.h>
 #include <kstring.h>
+#include <kmemory.h>
 #include <platform.h>
+#include <filesystem.h>
 
 typedef struct {
-  b8 initialized;
+  file_handle logfile_handle;
 } logger_system_state;
 
 static logger_system_state *state_ptr;
+
+void write_to_logfile(const char *msg) {
+  if (!state_ptr || !state_ptr->logfile_handle.is_valid) return;
+  u64 len = kstrlen(msg);
+  u64 written = 0;
+  if (!filesystem_write(&state_ptr->logfile_handle, len, msg, &written)) {
+    platform_console_write_error("[ERROR]: Unable to write to logfile (wge.log)",
+                                 LOG_LEVEL_ERROR);
+  }
+}
 
 b8 initialize_logging(u64 *memory_requirements, void *state) {
   *memory_requirements = sizeof(logger_system_state);
   if (!state) return true;
 
   state_ptr = state;
-  state_ptr->initialized = true;
 
-  // TODO: create log file
+  // Create log file
+  if (!filesystem_open("wge.log", FILE_MODE_WRITE, false, &state_ptr->logfile_handle)) {
+    platform_console_write_error("[ERROR]: Unable to open logfile (wge.log) for writing",
+                                 LOG_LEVEL_ERROR);
+    return false;
+  }
+
   return true;
 }
 
@@ -60,20 +76,21 @@ void log_output(log_level level, const char *message, ...) {
     "[DEBUG]: ",
     "[TRACE]: "
   };
+  char out_message[LOG_MSG_SIZE];
+  kzero_memory(out_message, sizeof(out_message));
 
-  // Read all arguments and construct the log message ('tmp')
-  char tmp[LOG_MSG_SIZE] = {0};
+  // Read all arguments and construct the log message
   __builtin_va_list arg_ptr;
   va_start(arg_ptr, message);
-  vsnprintf(tmp, LOG_MSG_SIZE, message, arg_ptr);
+  kstrfmt_v(out_message, message, arg_ptr);
   va_end(arg_ptr);
 
-  // Construct the final log message ('out_message') by prepending
-  // the corresponding loglevel tag to the raw log message ('tmp')
-  char out_message[LOG_MSG_SIZE + kstrlen(level_strings[level])];
-  sprintf(out_message, "%s%s\n", level_strings[level], tmp);
+  // Prepend the corresponding loglevel to the log message
+  kstrfmt(out_message, "%s%s\n", level_strings[level], out_message);
 
-  // printf("%s", out_message);
   if (is_error) platform_console_write_error(out_message, level);
   else platform_console_write(out_message, level);
+
+  // Write the msg also to the logfile
+  write_to_logfile(out_message);
 }

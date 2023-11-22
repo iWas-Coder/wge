@@ -25,6 +25,7 @@
 #include <asserts.h>
 #include <vulkan/vulkan.h>
 
+#define OBJECT_SHADER_STAGE_COUNT 2  // vertex and fragment shaders
 #define VK_CHECK(e) KASSERT(e == VK_SUCCESS)
 
 typedef struct {
@@ -118,6 +119,22 @@ typedef struct {
 } vulkan_fence;
 
 typedef struct {
+  VkShaderModuleCreateInfo create_info;
+  VkShaderModule handle;
+  VkPipelineShaderStageCreateInfo shader_stage_create_info;
+} vulkan_shader_stage;
+
+typedef struct {
+  VkPipeline handle;
+  VkPipelineLayout pipeline_layout;
+} vulkan_pipeline;
+
+typedef struct {
+  vulkan_shader_stage stages[OBJECT_SHADER_STAGE_COUNT];
+  vulkan_pipeline pipeline;
+} vulkan_object_shader;
+
+typedef struct {
   VkInstance instance;
   VkAllocationCallbacks *allocator;
   VkSurfaceKHR surface;
@@ -140,5 +157,6 @@ typedef struct {
   u32 image_index;
   u32 current_frame;
   b8 recreating_swapchain;
+  vulkan_object_shader object_shader;
   i32 (*find_memory_index)(u32 type_filter, u32 property_flags);
 } vulkan_context;

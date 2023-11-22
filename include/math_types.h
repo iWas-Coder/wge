@@ -65,3 +65,7 @@ typedef union {
   alignas(16) Vector4 rows[4];
 #endif
 } Matrix4;
+
+typedef struct {
+  Vector3 position;
+} vertex_3d;

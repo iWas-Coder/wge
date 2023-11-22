@@ -33,6 +33,7 @@
 #include <vulkan_swapchain.h>
 #include <vulkan_renderpass.h>
 #include <vulkan_framebuffer.h>
+#include <vulkan_object_shader.h>
 #include <vulkan_command_buffer.h>
 
 static vulkan_context context;
@@ -340,14 +341,22 @@ b8 vulkan_renderer_backend_initialize(renderer_backend *backend, const char *app
   context.images_in_flight = darray_reserve(vulkan_fence, context.swapchain.image_count);
   for (u32 i = 0; i < context.swapchain.image_count; ++i) context.images_in_flight[i] = 0;
 
+  // Create builtin shaders
+  if (!vulkan_object_shader_create(&context, &context.object_shader)) {
+    KERROR("Failed to create the builtin shader");
+    return false;
+  }
+
   KINFO("Vulkan renderer initialized");
   return true;
 }
 
 void vulkan_renderer_backend_shutdown(renderer_backend *backend) {
   (void) backend;  // Unused parameter
-
+  // Wait until device is idle
   vkDeviceWaitIdle(context.device.logical_device);
+
+  vulkan_object_shader_destroy(&context, &context.object_shader);
 
   // Destroy semaphores & fences
   for (u8 i = 0; i < context.swapchain.max_frames_in_flight; ++i) {

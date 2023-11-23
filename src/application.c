@@ -82,19 +82,19 @@ b8 application_on_key(u16 code, void *sender, void *listener_inst, event_context
   (void) sender;         // Unused parameter
   (void) listener_inst;  // Unused parameter
 
+  u16 key_code = context.data.u16[0];
+
   // Key pressed
   if (code == EVENT_CODE_KEY_PRESSED) {
-    u16 key_code = context.data.u16[0];
     if (key_code == KEY_ESCAPE) {
       event_context data = {0};
       event_fire(EVENT_CODE_APPLICATION_QUIT, 0, data);
       return true;
     }
-    else KDEBUG("'%c' key pressed", key_code);
+    else { KDEBUG("'%c' key pressed", key_code); }
   }
   // Key released
   else if (code == EVENT_CODE_KEY_RELEASED) {
-    u16 key_code = context.data.u16[0];
     KDEBUG("'%c' key released", key_code);
   }
   return false;

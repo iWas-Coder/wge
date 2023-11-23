@@ -1,4 +1,7 @@
+.cache/
 build/
 
+TAGS
+compile_commands.json
 *.so
 test/test

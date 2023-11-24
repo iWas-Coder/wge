@@ -2,6 +2,7 @@
 build/
 
 TAGS
+.clangd
 compile_commands.json
 *.so
 test/test

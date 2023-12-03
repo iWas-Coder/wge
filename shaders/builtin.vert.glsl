@@ -23,7 +23,14 @@
 // #extension GL_ARG_separate_shader_objects : enable
 
 layout(location = 0) in vec3 in_pos;
+layout(set = 0, binding = 0) uniform global_uniform_obj {
+  mat4 proj;
+  mat4 view;
+} global_ubo;
+layout(push_constant) uniform push_constants {
+  mat4 model;
+} u_push_constants;
 
 void main(void) {
-  gl_Position = vec4(in_pos, 1.0);
+  gl_Position = global_ubo.proj * global_ubo.view * u_push_constants.model * vec4(in_pos, 1.0);
 }

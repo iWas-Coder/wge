@@ -122,10 +122,17 @@ b8 vulkan_graphics_pipeline_create(vulkan_context *context,
     .topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST,
     .primitiveRestartEnable = VK_FALSE
   };
+  VkPushConstantRange push_constant = {
+    .stageFlags = VK_SHADER_STAGE_VERTEX_BIT,
+    .offset = sizeof(Matrix4) * 0,
+    .size = sizeof(Matrix4) * 2
+  };
   VkPipelineLayoutCreateInfo pipeline_layout_create_info = {
     .sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO,
     .setLayoutCount = descriptor_set_layout_count,
-    .pSetLayouts = descriptor_set_layouts
+    .pSetLayouts = descriptor_set_layouts,
+    .pushConstantRangeCount = 1,
+    .pPushConstantRanges = &push_constant
   };
 
   // Create pipeline layout

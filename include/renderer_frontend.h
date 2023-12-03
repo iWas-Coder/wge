@@ -33,3 +33,5 @@ b8 renderer_system_initialize(u64 *memory_requirements,
 void renderer_system_shutdown(void *state);
 void renderer_on_resized(u16 width, u16 height);
 b8 renderer_draw_frame(render_packet *packet);
+// This function should not have external visibility, but it does for now :D
+KAPI void renderer_set_view(Matrix4 view);

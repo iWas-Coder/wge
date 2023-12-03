@@ -208,6 +208,39 @@ b8 recreate_swapchain(renderer_backend *backend) {
   return true;
 }
 
+void upload_data_range(vulkan_context *context,
+                       VkCommandPool pool,
+                       VkFence fence,
+                       VkQueue queue,
+                       vulkan_buffer *buffer,
+                       u64 offset,
+                       u64 size,
+                       void *data) {
+  VkBufferUsageFlags flags = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
+  vulkan_buffer tmp_buf;
+  // Create temporal buffer
+  vulkan_buffer_create(context,
+                       size,
+                       VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
+                       flags,
+                       true,
+                       &tmp_buf);
+  // Load data into temporal buffer
+  vulkan_buffer_load(context, &tmp_buf, 0, size, 0, data);
+  // Copy data from temporal buffer to device local buffer
+  vulkan_buffer_copy(context,
+                     pool,
+                     fence,
+                     queue,
+                     tmp_buf.handle,
+                     0,
+                     buffer->handle,
+                     offset,
+                     size);
+  // Destroy temporal buffer
+  vulkan_buffer_destroy(context, &tmp_buf);
+}
+
 b8 vulkan_renderer_backend_initialize(renderer_backend *backend, const char *application_name) {
   // Set the `find_memory_index` function pointer to its definition
   context.find_memory_index = find_memory_index;
@@ -380,6 +413,47 @@ b8 vulkan_renderer_backend_initialize(renderer_backend *backend, const char *app
 
   // Create vertex and index buffers
   create_buffers(&context);
+
+  // START OF TEMPORARY GEOMETRY TEST
+  const u32 n_vertex = 4;
+  const u32 n_index = 6;
+  const f32 factor = 10.0f;
+  vertex_3d vertex_list[n_vertex];
+  kzero_memory(vertex_list, sizeof(vertex_3d) * n_vertex);
+  vertex_list[0] = (vertex_3d) {
+    .position.x = -0.5f * factor,
+    .position.y = -0.5f * factor
+  };
+  vertex_list[1] = (vertex_3d) {
+    .position.x = 0.5f * factor,
+    .position.y = 0.5f * factor
+  };
+  vertex_list[2] = (vertex_3d) {
+    .position.x = -0.5f * factor,
+    .position.y = 0.5f * factor
+  };
+  vertex_list[3] = (vertex_3d) {
+    .position.x = 0.5f * factor,
+    .position.y = -0.5f * factor
+  };
+  u32 index_list[] = {0, 1, 2, 0, 3, 1};
+  upload_data_range(&context,
+                    context.device.graphics_command_pool,
+                    0,
+                    context.device.graphics_queue,
+                    &context.object_vertex_buffer,
+                    0,
+                    sizeof(vertex_3d) * n_vertex,
+                    vertex_list);
+  upload_data_range(&context,
+                    context.device.graphics_command_pool,
+                    0,
+                    context.device.graphics_queue,
+                    &context.object_index_buffer,
+                    0,
+                    sizeof(u32) * n_index,
+                    index_list);
+  // END OF TEMPORARY GEOMETRY TEST
 
   KINFO("Vulkan renderer initialized");
   return true;
@@ -556,6 +630,21 @@ b8 vulkan_renderer_backend_begin_frame(renderer_backend *backend, f32 delta_time
   return true;
 }
 
+void vulkan_renderer_backend_update(Matrix4 proj,
+                                    Matrix4 view,
+                                    Vector3 view_pos,
+                                    Vector4 ambient_color,
+                                    i32 mode) {
+  (void) view_pos;       // Unused parameter
+  (void) ambient_color;  // Unused parameter
+  (void) mode;           // Unused parameter
+
+  vulkan_object_shader_use(&context, &context.object_shader);
+  context.object_shader.global_ubo.proj = proj;
+  context.object_shader.global_ubo.view = view;
+  vulkan_object_shader_update(&context, &context.object_shader);
+}
+
 b8 vulkan_renderer_backend_end_frame(renderer_backend *backend, f32 delta_time) {
   (void) backend;     // Unused parameter
   (void) delta_time;  // Unused parameter
@@ -606,4 +695,30 @@ b8 vulkan_renderer_backend_end_frame(renderer_backend *backend, f32 delta_time) 
                            context.image_index);
 
   return true;
+}
+
+void vulkan_renderer_backend_update_object(Matrix4 model) {
+  vulkan_object_shader_update_object(&context, &context.object_shader, model);
+
+  vulkan_command_buffer *command_buffer = &context.graphics_command_buffers[context.image_index];
+
+  // START OF TEMPORARY GEOMETRY TEST
+  vulkan_object_shader_use(&context, &context.object_shader);
+  VkDeviceSize offsets[] = {0};
+  vkCmdBindVertexBuffers(command_buffer->handle,
+                         0,
+                         1,
+                         &context.object_vertex_buffer.handle,
+                         offsets);
+  vkCmdBindIndexBuffer(command_buffer->handle,
+                       context.object_index_buffer.handle,
+                       0,
+                       VK_INDEX_TYPE_UINT32);
+  vkCmdDrawIndexed(command_buffer->handle,
+                   6,
+                   1,
+                   0,
+                   0,
+                   0);
+  // END OF TEMPORARY GEOMETRY TEST
 }

@@ -19,13 +19,20 @@
  */
 
 
+#include <kmath.h>
 #include <logger.h>
 #include <kmemory.h>
 #include <renderer_backend.h>
 #include <renderer_frontend.h>
 
+#define PROJ_MATRIX_ASPECT_RATIO (16 / 9.0f)
+
 typedef struct {
   renderer_backend backend;
+  Matrix4 proj;
+  Matrix4 view;
+  f32 near_clip;
+  f32 far_clip;
 } renderer_system_state;
 
 static renderer_system_state *state_ptr;
@@ -44,6 +51,15 @@ b8 renderer_system_initialize(u64 *memory_requirements,
     KFATAL("Renderer backend initialization failed. Shutting down the engine...");
     return false;
   }
+
+  state_ptr->near_clip = 0.1f;
+  state_ptr->far_clip = 1000.0f;
+  state_ptr->proj = mat4_persp_proj(deg_to_rad(45.0f),
+                                   PROJ_MATRIX_ASPECT_RATIO,
+                                   state_ptr->near_clip,
+                                   state_ptr->far_clip);
+  state_ptr->view = mat4_inv(mat4_translation((Vector3) {{{ 0, 0, -30.0f }}}));
+
   return true;
 }
 
@@ -56,7 +72,13 @@ void renderer_system_shutdown(void *state) {
 }
 
 void renderer_on_resized(u16 width, u16 height) {
-  if (state_ptr) state_ptr->backend.resized(&state_ptr->backend, width, height);
+  if (state_ptr) {
+    state_ptr->proj = mat4_persp_proj(deg_to_rad(45.0f),
+                                     (f32) width / height,
+                                     state_ptr->near_clip,
+                                     state_ptr->far_clip);
+    state_ptr->backend.resized(&state_ptr->backend, width, height);
+  }
   else KWARN("renderer_on_resized :: Renderer backend does not exist");
 }
 
@@ -74,6 +96,15 @@ b8 renderer_end_frame(f32 delta_time) {
 
 b8 renderer_draw_frame(render_packet *packet) {
   if (renderer_begin_frame(packet->delta_time)) {
+    state_ptr->backend.update(state_ptr->proj, state_ptr->view, vec3_zero(), vec4_one(), 0);
+
+    // Object rotation per frame
+    static f32 angle = 0.01f;
+    angle += 0.001f;
+    Quaternion rot = euler_to_quat(vec3_forward(), angle, false);
+    Matrix4 model = quat_to_mat4_center(rot, vec3_zero());
+    state_ptr->backend.update_object(model);
+
     b8 result = renderer_end_frame(packet->delta_time);
     if (!result) {
       KERROR("`renderer_draw_frame` failed. Shutting down the engine...");
@@ -81,4 +112,8 @@ b8 renderer_draw_frame(render_packet *packet) {
     }
   }
   return true;
+}
+
+void renderer_set_view(Matrix4 view) {
+  state_ptr->view = view;
 }

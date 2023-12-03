@@ -22,12 +22,20 @@
 #pragma once
 
 #include <defines.h>
+#include <math_types.h>
 
 typedef enum {
   RENDERER_BACKEND_TYPE_VULKAN,
   RENDERER_BACKEND_TYPE_OPENGL,
   RENDERER_BACKEND_TYPE_DIRECTX
 } renderer_backend_type;
+
+typedef struct {
+  Matrix4 proj;
+  Matrix4 view;
+  Matrix4 padding0;
+  Matrix4 padding1;
+} global_uniform_object;
 
 typedef struct {
   f32 delta_time;
@@ -39,5 +47,7 @@ typedef struct renderer_backend {
   void (*shutdown)(struct renderer_backend *backend);
   void (*resized)(struct renderer_backend *backend, u16 width, u16 height);
   b8 (*begin_frame)(struct renderer_backend *backend, f32 delta_time);
+  void (*update)(Matrix4 proj, Matrix4 view, Vector3 view_pos, Vector4 ambient_color, i32 mode);
   b8 (*end_frame)(struct renderer_backend *backend, f32 delta_time);
+  void (*update_object)(Matrix4 model);
 } renderer_backend;

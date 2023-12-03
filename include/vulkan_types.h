@@ -24,8 +24,10 @@
 #include <defines.h>
 #include <asserts.h>
 #include <vulkan/vulkan.h>
+#include <renderer_types.h>
 
 #define OBJECT_SHADER_STAGE_COUNT 2  // vertex and fragment shaders
+#define OBJECT_SHADER_DESCRIPTOR_COUNT 8
 #define VK_CHECK(e) KASSERT(e == VK_SUCCESS)
 
 typedef struct {
@@ -142,6 +144,11 @@ typedef struct {
 typedef struct {
   vulkan_shader_stage stages[OBJECT_SHADER_STAGE_COUNT];
   vulkan_pipeline pipeline;
+  VkDescriptorPool global_descriptor_pool;
+  VkDescriptorSet global_descriptor_sets[OBJECT_SHADER_DESCRIPTOR_COUNT];
+  VkDescriptorSetLayout global_descriptor_set_layout;
+  global_uniform_object global_ubo;
+  vulkan_buffer global_uniform_buffer;
 } vulkan_object_shader;
 
 typedef struct {

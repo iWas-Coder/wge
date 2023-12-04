@@ -23,15 +23,26 @@
 
 #include <renderer_types.h>
 
-// Forward declarations
-struct platform_state;
-struct static_mesh_data;
-
 b8 renderer_system_initialize(u64 *memory_requirements,
                               void *state,
                               const char *application_name);
+
 void renderer_system_shutdown(void *state);
+
 void renderer_on_resized(u16 width, u16 height);
+
 b8 renderer_draw_frame(render_packet *packet);
+
 // This function should not have external visibility, but it does for now :D
 KAPI void renderer_set_view(Matrix4 view);
+
+void renderer_create_texture(const char *name,
+                             b8 auto_release,
+                             i32 width,
+                             i32 height,
+                             i32 channel_count,
+                             const u8 *pixels,
+                             b8 has_transparency,
+                             texture *out_texture);
+
+void renderer_destroy_texture(texture *texture);

@@ -28,6 +28,7 @@
 #include <vulkan_types.h>
 #include <vulkan_utils.h>
 #include <vulkan_fence.h>
+#include <vulkan_image.h>
 #include <vulkan_device.h>
 #include <vulkan_buffer.h>
 #include <vulkan_backend.h>
@@ -721,4 +722,127 @@ void vulkan_renderer_backend_update_object(Matrix4 model) {
                    0,
                    0);
   // END OF TEMPORARY GEOMETRY TEST
+}
+
+void vulkan_renderer_backend_create_texture(const char *name,
+                                            b8 auto_release,
+                                            i32 width,
+                                            i32 height,
+                                            i32 channel_count,
+                                            const u8 *pixels,
+                                            b8 has_transparency,
+                                            texture *out_texture) {
+  (void) name;          // Unused parameter
+  (void) auto_release;  // Unused parameter
+
+  out_texture->width = width;
+  out_texture->height = height;
+  out_texture->channel_count = channel_count;
+  out_texture->generation = 0;
+
+  // Internal data
+  out_texture->data = (vulkan_texture_data *) kallocate(sizeof(vulkan_texture_data), MEMORY_TAG_TEXTURE);
+  vulkan_texture_data *data = (vulkan_texture_data *) out_texture->data;
+  VkDeviceSize image_size = width * height * channel_count;
+  VkFormat image_format = VK_FORMAT_R8G8B8A8_UNORM;
+
+  // Create buffer
+  VkBufferUsageFlags usage = VK_BUFFER_USAGE_TRANSFER_SRC_BIT;
+  VkMemoryPropertyFlags mem_prop_flags = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
+  vulkan_buffer buf;
+  vulkan_buffer_create(&context,
+                       image_size,
+                       usage,
+                       mem_prop_flags,
+                       true,
+                       &buf);
+  vulkan_buffer_load(&context,
+                     &buf,
+                     0,
+                     image_size,
+                     0,
+                     pixels);
+
+  // Create image
+  vulkan_image_create(&context,
+                      VK_IMAGE_TYPE_2D,
+                      width,
+                      height,
+                      image_format,
+                      VK_IMAGE_TILING_OPTIMAL,
+                      VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT,
+                      VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
+                      true,
+                      VK_IMAGE_ASPECT_COLOR_BIT,
+                      &data->image);
+
+  // Create command buffer
+  vulkan_command_buffer cmd_buf;
+  VkCommandPool pool = context.device.graphics_command_pool;
+  VkQueue queue = context.device.graphics_queue;
+  vulkan_command_buffer_oneshot_start(&context, pool, &cmd_buf);
+
+  // Transition layout from undefined to transfer_dst
+  vulkan_image_transition_layout(&context,
+                                 &cmd_buf,
+                                 &data->image,
+                                 image_format,
+                                 VK_IMAGE_LAYOUT_UNDEFINED,
+                                 VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
+
+  // Copy data from buffer
+  vulkan_image_copy(&context, &data->image, buf.handle, &cmd_buf);
+
+  // Transition layout from transfer_dst to shader_read_only
+  vulkan_image_transition_layout(&context,
+                                 &cmd_buf,
+                                 &data->image,
+                                 image_format,
+                                 VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+                                 VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+
+  // End command buffer
+  vulkan_command_buffer_oneshot_end(&context, pool, &cmd_buf, queue);
+
+  // Create texture sampler
+  VkSamplerCreateInfo sampler_info = {
+    .sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO,
+    .magFilter = VK_FILTER_LINEAR,
+    .minFilter = VK_FILTER_LINEAR,
+    .addressModeU = VK_SAMPLER_ADDRESS_MODE_REPEAT,
+    .addressModeV = VK_SAMPLER_ADDRESS_MODE_REPEAT,
+    .addressModeW = VK_SAMPLER_ADDRESS_MODE_REPEAT,
+    .anisotropyEnable = VK_TRUE,
+    .maxAnisotropy = 16,
+    .borderColor = VK_BORDER_COLOR_INT_OPAQUE_BLACK,
+    .unnormalizedCoordinates = VK_FALSE,
+    .compareEnable = VK_FALSE,
+    .compareOp = VK_COMPARE_OP_ALWAYS,
+    .mipmapMode = VK_SAMPLER_MIPMAP_MODE_LINEAR,
+    .mipLodBias = 0,
+    .minLod = 0,
+    .maxLod = 0
+  };
+  VkResult result = vkCreateSampler(context.device.logical_device,
+                                    &sampler_info,
+                                    context.allocator,
+                                    &data->sampler);
+  if (!vulkan_result_is_success(result)) {
+    KERROR("Failed to create texture sampler: %s", vulkan_result_string(result, true));
+    return;
+  }
+  out_texture->has_transparency = has_transparency;
+  ++out_texture->generation;
+}
+
+void vulkan_renderer_backend_destroy_texture(texture *in_texture) {
+  vulkan_texture_data *data = (vulkan_texture_data *) in_texture->data;
+
+  vulkan_image_destroy(&context, &data->image);
+  kzero_memory(&data->image, sizeof(vulkan_image));
+  vkDestroySampler(context.device.logical_device, data->sampler, context.allocator);
+  data->sampler = 0;
+
+  kfree(in_texture->data, sizeof(vulkan_texture_data), MEMORY_TAG_TEXTURE);
+  kzero_memory(in_texture, sizeof(texture));
 }

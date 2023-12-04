@@ -181,3 +181,8 @@ typedef struct {
   u64 geometry_index_offset;
   i32 (*find_memory_index)(u32 type_filter, u32 property_flags);
 } vulkan_context;
+
+typedef struct {
+  vulkan_image image;
+  VkSampler sampler;
+} vulkan_texture_data;

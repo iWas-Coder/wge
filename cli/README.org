@@ -1,0 +1,6 @@
+#+AUTHOR: Wasym A. Alonso
+#+TITLE: WGE: CLI
+
+(...)
+
+* Table of Contents :toc:

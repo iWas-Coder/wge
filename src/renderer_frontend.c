@@ -33,6 +33,7 @@ typedef struct {
   Matrix4 view;
   f32 near_clip;
   f32 far_clip;
+  texture fallback_texture;
 } renderer_system_state;
 
 static renderer_system_state *state_ptr;
@@ -60,6 +61,8 @@ b8 renderer_system_initialize(u64 *memory_requirements,
                                    state_ptr->far_clip);
   state_ptr->view = mat4_inv(mat4_translation((Vector3) {{{ 0, 0, -30.0f }}}));
 
+  // renderer_create_fallback_texture();
+
   return true;
 }
 
@@ -67,6 +70,7 @@ void renderer_system_shutdown(void *state) {
   (void) state;  // Unused parameter
 
   if (!state_ptr) return;
+  // renderer_destroy_texture(&state_ptr->fallback_texture);
   state_ptr->backend.shutdown(&state_ptr->backend);
   state_ptr = 0;
 }
@@ -102,8 +106,14 @@ b8 renderer_draw_frame(render_packet *packet) {
     static f32 angle = 0.01f;
     angle += 0.001f;
     Quaternion rot = euler_to_quat(vec3_forward(), angle, false);
+
     Matrix4 model = quat_to_mat4_center(rot, vec3_zero());
-    state_ptr->backend.update_object(model);
+    geometry_render_data data = {
+      .object_id = 0,
+      .model = model,
+      .textures[0] = &state_ptr->fallback_texture
+    };
+    state_ptr->backend.update_object(data);
 
     b8 result = renderer_end_frame(packet->delta_time);
     if (!result) {
@@ -138,4 +148,40 @@ void renderer_create_texture(const char *name,
 
 void renderer_destroy_texture(texture *texture) {
   state_ptr->backend.destroy_texture(texture);
+}
+
+void renderer_create_fallback_texture(void) {
+  // Fallback texture creation (256x256 blue+white checkerboard pattern)
+  const i32 texture_size = 256;
+  const i32 channels = 4;
+  const i32 pixel_count = texture_size * texture_size;
+  u8 *pixels = kallocate(sizeof(u8) * pixel_count * channels, MEMORY_TAG_TEXTURE);
+  // u8 pixels[pixel_count * channels];
+  // set all pixels to white
+  kset_memory(pixels, texture_size - 1, sizeof(u8) * pixel_count * channels);
+  for (u64 i = 0; i < texture_size; ++i) {
+    for (u64 j = 0; j < texture_size; ++j) {
+      u64 idx = (i * texture_size) + j;
+      u64 idx_bpp = idx * channels;
+      // set alternating pixels to blue (setting red/green channels to 0)
+      if (i % 2 && j % 2) {
+        pixels[idx_bpp]     = 0;
+        pixels[idx_bpp + 1] = 0;
+      }
+      else if (!(j % 2)) {
+        pixels[idx_bpp]     = 0;
+        pixels[idx_bpp + 1] = 0;
+      }
+    }
+  }
+  KTRACE("Creating fallback texture...");
+  renderer_create_texture("fallback",
+                          false,
+                          texture_size,
+                          texture_size,
+                          channels,
+                          pixels,
+                          false,
+                          &state_ptr->fallback_texture);
+  KTRACE("Fallback texture created");
 }

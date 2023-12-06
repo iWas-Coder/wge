@@ -643,7 +643,7 @@ void vulkan_renderer_backend_update(Matrix4 proj,
   vulkan_object_shader_use(&context, &context.object_shader);
   context.object_shader.global_ubo.proj = proj;
   context.object_shader.global_ubo.view = view;
-  vulkan_object_shader_update(&context, &context.object_shader);
+  vulkan_object_shader_update(&context, &context.object_shader, context.frame_delta_time);
 }
 
 b8 vulkan_renderer_backend_end_frame(renderer_backend *backend, f32 delta_time) {
@@ -698,8 +698,8 @@ b8 vulkan_renderer_backend_end_frame(renderer_backend *backend, f32 delta_time) 
   return true;
 }
 
-void vulkan_renderer_backend_update_object(Matrix4 model) {
-  vulkan_object_shader_update_object(&context, &context.object_shader, model);
+void vulkan_renderer_backend_update_object(geometry_render_data data) {
+  vulkan_object_shader_update_object(&context, &context.object_shader, data);
 
   vulkan_command_buffer *command_buffer = &context.graphics_command_buffers[context.image_index];
 
@@ -738,7 +738,7 @@ void vulkan_renderer_backend_create_texture(const char *name,
   out_texture->width = width;
   out_texture->height = height;
   out_texture->channel_count = channel_count;
-  out_texture->generation = 0;
+  out_texture->generation = INVALID_ID;
 
   // Internal data
   out_texture->data = (vulkan_texture_data *) kallocate(sizeof(vulkan_texture_data), MEMORY_TAG_TEXTURE);
@@ -792,6 +792,7 @@ void vulkan_renderer_backend_create_texture(const char *name,
 
   // Copy data from buffer
   vulkan_image_copy(&context, &data->image, buf.handle, &cmd_buf);
+  vulkan_buffer_destroy(&context, &buf);
 
   // Transition layout from transfer_dst to shader_read_only
   vulkan_image_transition_layout(&context,
@@ -836,6 +837,8 @@ void vulkan_renderer_backend_create_texture(const char *name,
 }
 
 void vulkan_renderer_backend_destroy_texture(texture *in_texture) {
+  vkDeviceWaitIdle(context.device.logical_device);
+
   vulkan_texture_data *data = (vulkan_texture_data *) in_texture->data;
 
   vulkan_image_destroy(&context, &data->image);

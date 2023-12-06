@@ -28,6 +28,7 @@
 #include <vulkan_object_shader.h>
 
 #define BUILTIN_SHADER_NAME_OBJECT "builtin"
+#define ATTRIBUTE_COUNT 1
 
 b8 vulkan_object_shader_create(vulkan_context *context, vulkan_object_shader *out_shader) {
   char *stage_type_names[] = { "vert", "frag" };
@@ -97,15 +98,14 @@ b8 vulkan_object_shader_create(vulkan_context *context, vulkan_object_shader *ou
     .extent.height = context->framebuffer_height
   };
   u32 offset = 0;
-  const i32 attribute_count = 1;
-  VkVertexInputAttributeDescription attribute_descriptions[attribute_count];
+  VkVertexInputAttributeDescription attribute_descriptions[ATTRIBUTE_COUNT];
   VkFormat formats[] = {
     VK_FORMAT_R32G32B32_SFLOAT
   };
   u64 sizes[] = {
     sizeof(Vector3)
   };
-  for (u32 i = 0; i < attribute_count; ++i) {
+  for (u32 i = 0; i < ATTRIBUTE_COUNT; ++i) {
     attribute_descriptions[i] = (VkVertexInputAttributeDescription) {
       .binding = 0,
       .location = i,
@@ -130,7 +130,7 @@ b8 vulkan_object_shader_create(vulkan_context *context, vulkan_object_shader *ou
   // Create pipeline
   if (!vulkan_graphics_pipeline_create(context,
                                        &context->main_renderpass,
-                                       attribute_count,
+                                       ATTRIBUTE_COUNT,
                                        attribute_descriptions,
                                        descriptor_set_layout_count,
                                        layouts,
@@ -205,7 +205,11 @@ void vulkan_object_shader_use(vulkan_context *context, vulkan_object_shader *sha
                        &shader->pipeline);
 }
 
-void vulkan_object_shader_update(vulkan_context *context, vulkan_object_shader *shader) {
+void vulkan_object_shader_update(vulkan_context *context,
+                                 vulkan_object_shader *shader,
+                                 f32 delta_time) {
+  (void) delta_time;  // Unused parameter
+
   u32 image_idx = context->image_index;
   VkCommandBuffer command_buffer = context->graphics_command_buffers[image_idx].handle;
   VkDescriptorSet global_descriptor = shader->global_descriptor_sets[image_idx];
@@ -253,7 +257,7 @@ void vulkan_object_shader_update(vulkan_context *context, vulkan_object_shader *
 
 void vulkan_object_shader_update_object(vulkan_context *context,
                                         vulkan_object_shader *shader,
-                                        Matrix4 model) {
+                                        geometry_render_data data) {
   u32 image_idx = context->image_index;
   VkCommandBuffer command_buffer = context->graphics_command_buffers[image_idx].handle;
 
@@ -262,5 +266,5 @@ void vulkan_object_shader_update_object(vulkan_context *context,
                      VK_SHADER_STAGE_VERTEX_BIT,
                      0,
                      sizeof(Matrix4),
-                     &model);
+                     &data.model);
 }

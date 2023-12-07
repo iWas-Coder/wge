@@ -1,11 +1,12 @@
 .cache/
 build/
 
-TAGS
-.clangd
-compile_commands.json
 *.so
-test/test
 *.yaml
+.clangd
+TAGS
+compile_commands.json
+cli/*cli*
+test/test
 
 !.github/**/*.yaml

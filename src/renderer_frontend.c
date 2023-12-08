@@ -61,7 +61,7 @@ b8 renderer_system_initialize(u64 *memory_requirements,
                                    state_ptr->far_clip);
   state_ptr->view = mat4_inv(mat4_translation((Vector3) {{{ 0, 0, -30.0f }}}));
 
-  // renderer_create_fallback_texture();
+  renderer_create_fallback_texture();
 
   return true;
 }
@@ -70,7 +70,7 @@ void renderer_system_shutdown(void *state) {
   (void) state;  // Unused parameter
 
   if (!state_ptr) return;
-  // renderer_destroy_texture(&state_ptr->fallback_texture);
+  renderer_destroy_texture(&state_ptr->fallback_texture);
   state_ptr->backend.shutdown(&state_ptr->backend);
   state_ptr = 0;
 }

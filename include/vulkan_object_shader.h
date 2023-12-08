@@ -37,3 +37,11 @@ void vulkan_object_shader_update(vulkan_context *context,
 void vulkan_object_shader_update_object(vulkan_context *context,
                                         vulkan_object_shader *shader,
                                         geometry_render_data data);
+
+b8 vulkan_object_shader_get_resources(vulkan_context *context,
+                                      vulkan_object_shader *shader,
+                                      u32 *out_object_id);
+
+void vulkan_object_shader_release_resources(vulkan_context *context,
+                                            vulkan_object_shader *shader,
+                                            u32 object_id);

@@ -419,24 +419,32 @@ b8 vulkan_renderer_backend_initialize(renderer_backend *backend, const char *app
   const u32 n_vertex = 4;
   const u32 n_index = 6;
   const f32 factor = 10.0f;
-  vertex_3d vertex_list[n_vertex];
-  kzero_memory(vertex_list, sizeof(vertex_3d) * n_vertex);
-  vertex_list[0] = (vertex_3d) {
-    .position.x = -0.5f * factor,
-    .position.y = -0.5f * factor
-  };
-  vertex_list[1] = (vertex_3d) {
-    .position.x = 0.5f * factor,
-    .position.y = 0.5f * factor
-  };
-  vertex_list[2] = (vertex_3d) {
-    .position.x = -0.5f * factor,
-    .position.y = 0.5f * factor
-  };
-  vertex_list[3] = (vertex_3d) {
-    .position.x = 0.5f * factor,
-    .position.y = -0.5f * factor
-  };
+  vertex_3d vertex_list[] = {
+    {
+      .position.x = -0.5f * factor,
+      .position.y = -0.5f * factor,
+      .texcoord.x = 0.0f,
+      .texcoord.y = 0.0f
+    },
+    {
+      .position.x = 0.5f * factor,
+      .position.y = 0.5f * factor,
+      .texcoord.x = 1.0f,
+      .texcoord.y = 1.0f
+    },
+    {
+      .position.x = -0.5f * factor,
+      .position.y = 0.5f * factor,
+      .texcoord.x = 0.0f,
+      .texcoord.y = 1.0f
+    },
+    {
+      .position.x = 0.5f * factor,
+      .position.y = -0.5f * factor,
+      .texcoord.x = 1.0f,
+      .texcoord.y = 0.0f
+    }};
+
   u32 index_list[] = {0, 1, 2, 0, 3, 1};
   upload_data_range(&context,
                     context.device.graphics_command_pool,
@@ -454,6 +462,14 @@ b8 vulkan_renderer_backend_initialize(renderer_backend *backend, const char *app
                     0,
                     sizeof(u32) * n_index,
                     index_list);
+
+  u32 object_id = 0;
+  if (!vulkan_object_shader_get_resources(&context,
+                                          &context.object_shader,
+                                          &object_id)) {
+    KERROR("Failed to get shader resources");
+    return false;
+  }
   // END OF TEMPORARY GEOMETRY TEST
 
   KINFO("Vulkan renderer initialized");
@@ -558,8 +574,7 @@ void vulkan_renderer_backend_on_resized(renderer_backend *backend, u16 width, u1
 }
 
 b8 vulkan_renderer_backend_begin_frame(renderer_backend *backend, f32 delta_time) {
-  (void) delta_time;  // Unused parameter
-
+  context.frame_delta_time = delta_time;
   vulkan_device *device = &context.device;
 
   // Swapchain recreation
@@ -699,9 +714,8 @@ b8 vulkan_renderer_backend_end_frame(renderer_backend *backend, f32 delta_time) 
 }
 
 void vulkan_renderer_backend_update_object(geometry_render_data data) {
-  vulkan_object_shader_update_object(&context, &context.object_shader, data);
-
   vulkan_command_buffer *command_buffer = &context.graphics_command_buffers[context.image_index];
+  vulkan_object_shader_update_object(&context, &context.object_shader, data);
 
   // START OF TEMPORARY GEOMETRY TEST
   vulkan_object_shader_use(&context, &context.object_shader);
@@ -792,7 +806,6 @@ void vulkan_renderer_backend_create_texture(const char *name,
 
   // Copy data from buffer
   vulkan_image_copy(&context, &data->image, buf.handle, &cmd_buf);
-  vulkan_buffer_destroy(&context, &buf);
 
   // Transition layout from transfer_dst to shader_read_only
   vulkan_image_transition_layout(&context,
@@ -804,6 +817,7 @@ void vulkan_renderer_backend_create_texture(const char *name,
 
   // End command buffer
   vulkan_command_buffer_oneshot_end(&context, pool, &cmd_buf, queue);
+  vulkan_buffer_destroy(&context, &buf);
 
   // Create texture sampler
   VkSamplerCreateInfo sampler_info = {

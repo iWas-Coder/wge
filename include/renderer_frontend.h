@@ -46,3 +46,5 @@ void renderer_create_texture(const char *name,
                              texture *out_texture);
 
 void renderer_destroy_texture(texture *texture);
+
+void renderer_create_fallback_texture(void);

@@ -237,6 +237,16 @@ b8 select_physical_device(vulkan_context *context) {
     vkGetPhysicalDeviceFeatures(physical_devices[i], &features);
     vkGetPhysicalDeviceMemoryProperties(physical_devices[i], &memory);
 
+    // Check if device supports 'HOST_VISIBLE' + 'DEVICE_LOCAL' combo
+    b8 supports_device_local_host_visible = false;
+    for (u32 i = 0; i < memory.memoryTypeCount; ++i) {
+      if (((memory.memoryTypes[i].propertyFlags & VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT) != 0) &&
+          ((memory.memoryTypes[i].propertyFlags & VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT) != 0)) {
+        supports_device_local_host_visible = true;
+        break;
+      }
+    }
+
     vulkan_physical_device_requirements requirements = {
       .discrete_gpu = true,
       .graphics = true,
@@ -304,7 +314,8 @@ b8 select_physical_device(vulkan_context *context) {
         .transfer = queue_info.transfer,
         .properties = properties,
         .features = features,
-        .memory = memory
+        .memory = memory,
+        .supports_device_local_host_visible = supports_device_local_host_visible
       };
       break;
     }

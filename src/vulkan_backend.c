@@ -407,7 +407,9 @@ b8 vulkan_renderer_backend_initialize(renderer_backend *backend, const char *app
   for (u32 i = 0; i < context.swapchain.image_count; ++i) context.images_in_flight[i] = 0;
 
   // Create builtin shaders
-  if (!vulkan_object_shader_create(&context, &context.object_shader)) {
+  if (!vulkan_object_shader_create(&context,
+                                   backend->fallback_diffuse,
+                                   &context.object_shader)) {
     KERROR("Failed to create the builtin shader");
     return false;
   }
@@ -854,12 +856,14 @@ void vulkan_renderer_backend_destroy_texture(texture *in_texture) {
   vkDeviceWaitIdle(context.device.logical_device);
 
   vulkan_texture_data *data = (vulkan_texture_data *) in_texture->data;
-
-  vulkan_image_destroy(&context, &data->image);
-  kzero_memory(&data->image, sizeof(vulkan_image));
-  vkDestroySampler(context.device.logical_device, data->sampler, context.allocator);
-  data->sampler = 0;
-
-  kfree(in_texture->data, sizeof(vulkan_texture_data), MEMORY_TAG_TEXTURE);
+  if (data) {
+    vulkan_image_destroy(&context, &data->image);
+    kzero_memory(&data->image, sizeof(vulkan_image));
+    vkDestroySampler(context.device.logical_device,
+                     data->sampler,
+                     context.allocator);
+    data->sampler = 0;
+    kfree(in_texture->data, sizeof(vulkan_texture_data), MEMORY_TAG_TEXTURE);
+  }
   kzero_memory(in_texture, sizeof(texture));
 }

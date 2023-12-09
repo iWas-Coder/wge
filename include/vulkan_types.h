@@ -167,6 +167,7 @@ typedef struct {
   // TODO: manage this with a free list
   u32 object_uniform_buffer_index;
   vulkan_object_shader_object_state object_states[OBJECT_SHADER_MAX_OBJECTS];
+  texture *fallback_diffuse;
 } vulkan_object_shader;
 
 typedef struct {

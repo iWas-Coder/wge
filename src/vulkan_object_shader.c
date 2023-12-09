@@ -30,7 +30,11 @@
 #define ATTRIBUTE_COUNT 2
 #define BUILTIN_SHADER_NAME_OBJECT "builtin"
 
-b8 vulkan_object_shader_create(vulkan_context *context, vulkan_object_shader *out_shader) {
+b8 vulkan_object_shader_create(vulkan_context *context,
+                               texture *fallback_diffuse,
+                               vulkan_object_shader *out_shader) {
+  out_shader->fallback_diffuse = fallback_diffuse;
+
   char *stage_type_names[] = { "vert", "frag" };
   VkShaderStageFlagBits stage_types[] = {
     VK_SHADER_STAGE_VERTEX_BIT,
@@ -390,6 +394,14 @@ void vulkan_object_shader_update_object(vulkan_context *context,
   for (u32 i = 0; i < sampler_count; ++i) {
     texture *t = data.textures[i];
     u32 *descriptor_gen = &object_state->descriptor_states[descriptor_idx].generations[image_idx];
+
+    // If no texture is loaded, use the fallback one
+    // TODO: use multiple fallback textures and select most appropiate one
+    if (t->generation == INVALID_ID) {
+      t = shader->fallback_diffuse;
+      *descriptor_gen = INVALID_ID;
+    }
+
     // If descriptor needs to be updated
     if (t && (*descriptor_gen != t->generation || *descriptor_gen == INVALID_ID)) {
       vulkan_texture_data *internal_data = (vulkan_texture_data *) t->data;

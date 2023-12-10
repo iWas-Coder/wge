@@ -36,7 +36,7 @@
 #include <vulkan_swapchain.h>
 #include <vulkan_renderpass.h>
 #include <vulkan_framebuffer.h>
-#include <vulkan_object_shader.h>
+#include <vulkan_material_shader.h>
 #include <vulkan_command_buffer.h>
 
 static vulkan_context context;
@@ -407,9 +407,9 @@ b8 vulkan_renderer_backend_initialize(renderer_backend *backend, const char *app
   for (u32 i = 0; i < context.swapchain.image_count; ++i) context.images_in_flight[i] = 0;
 
   // Create builtin shaders
-  if (!vulkan_object_shader_create(&context,
-                                   backend->fallback_diffuse,
-                                   &context.object_shader)) {
+  if (!vulkan_material_shader_create(&context,
+                                     backend->fallback_diffuse,
+                                     &context.material_shader)) {
     KERROR("Failed to create the builtin shader");
     return false;
   }
@@ -466,9 +466,9 @@ b8 vulkan_renderer_backend_initialize(renderer_backend *backend, const char *app
                     index_list);
 
   u32 object_id = 0;
-  if (!vulkan_object_shader_get_resources(&context,
-                                          &context.object_shader,
-                                          &object_id)) {
+  if (!vulkan_material_shader_get_resources(&context,
+                                            &context.material_shader,
+                                            &object_id)) {
     KERROR("Failed to get shader resources");
     return false;
   }
@@ -487,7 +487,7 @@ void vulkan_renderer_backend_shutdown(renderer_backend *backend) {
   vulkan_buffer_destroy(&context, &context.object_vertex_buffer);
   vulkan_buffer_destroy(&context, &context.object_index_buffer);
 
-  vulkan_object_shader_destroy(&context, &context.object_shader);
+  vulkan_material_shader_destroy(&context, &context.material_shader);
 
   // Destroy semaphores & fences
   for (u8 i = 0; i < context.swapchain.max_frames_in_flight; ++i) {
@@ -657,10 +657,10 @@ void vulkan_renderer_backend_update(Matrix4 proj,
   (void) ambient_color;  // Unused parameter
   (void) mode;           // Unused parameter
 
-  vulkan_object_shader_use(&context, &context.object_shader);
-  context.object_shader.global_ubo.proj = proj;
-  context.object_shader.global_ubo.view = view;
-  vulkan_object_shader_update(&context, &context.object_shader, context.frame_delta_time);
+  vulkan_material_shader_use(&context, &context.material_shader);
+  context.material_shader.global_ubo.proj = proj;
+  context.material_shader.global_ubo.view = view;
+  vulkan_material_shader_update(&context, &context.material_shader, context.frame_delta_time);
 }
 
 b8 vulkan_renderer_backend_end_frame(renderer_backend *backend, f32 delta_time) {
@@ -717,10 +717,10 @@ b8 vulkan_renderer_backend_end_frame(renderer_backend *backend, f32 delta_time) 
 
 void vulkan_renderer_backend_update_object(geometry_render_data data) {
   vulkan_command_buffer *command_buffer = &context.graphics_command_buffers[context.image_index];
-  vulkan_object_shader_update_object(&context, &context.object_shader, data);
+  vulkan_material_shader_update_object(&context, &context.material_shader, data);
 
   // START OF TEMPORARY GEOMETRY TEST
-  vulkan_object_shader_use(&context, &context.object_shader);
+  vulkan_material_shader_use(&context, &context.material_shader);
   VkDeviceSize offsets[] = {0};
   vkCmdBindVertexBuffers(command_buffer->handle,
                          0,

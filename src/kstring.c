@@ -25,6 +25,10 @@
 #include <kstring.h>
 #include <kmemory.h>
 
+#ifndef _MSC_VER
+#include <strings.h>
+#endif
+
 u64 kstrlen(const char *str) {
   return strlen(str);
 }
@@ -38,6 +42,14 @@ char *kstrdup(const char *str) {
 
 b8 kstrcmp(const char *s1, const char *s2) {
   return strcmp(s1, s2) == 0;
+}
+
+b8 kstrcmpi(const char *s1, const char *s2) {
+#if defined(__GNUC__)
+  return strcasecmp(s1, s2) == 0;
+#elif defined(_MSC_VER)
+  return _strcmpi(s1, s2) == 0;
+#endif
 }
 
 i32 kstrfmt(char *dest, const char *format, ...) {

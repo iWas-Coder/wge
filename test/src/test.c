@@ -21,12 +21,14 @@
 
 #include <logger.h>
 #include <test_manager.h>
+#include <hash_table_test.h>
 #include <linear_allocator_test.h>
 
 int main(void) {
   test_manager_init();
 
   linear_allocator_test_register();
+  hash_table_test_register();
 
   test_manager_run();
   return 0;

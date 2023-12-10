@@ -25,8 +25,6 @@
 #include <kstring.h>
 #include <test_manager.h>
 
-#define CPP_STRINGIFY(x) (#x)
-
 typedef struct {
   PFN_test func;
   char *desc;
@@ -72,9 +70,6 @@ void test_manager_run(void) {
       ++failed;
     }
     clock_update(&total_time);
-    // char status[STATUS_MAX_LEN];
-    // kstrfmt(status, failed ? "FAILED" : "PASSED");
-    // KINFO("Ran %d/%d (%d skipped) %s :: %.6fs / %.6fs", i + 1, n, skipped, status, test_time.elapsed, total_time.elapsed);
   }
   clock_stop(&total_time);
   if (failed) {

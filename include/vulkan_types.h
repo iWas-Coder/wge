@@ -146,6 +146,7 @@ typedef struct {
 
 typedef struct {
   u32 generations[MATERIAL_SHADER_DESCRIPTOR_COUNT];
+  u32 ids[MATERIAL_SHADER_DESCRIPTOR_COUNT];
 } vulkan_descriptor_state;
 
 typedef struct {
@@ -167,7 +168,6 @@ typedef struct {
   // TODO: manage this with a free list
   u32 object_uniform_buffer_index;
   vulkan_material_shader_object_state object_states[MATERIAL_SHADER_MAX_OBJECTS];
-  texture *fallback_diffuse;
 } vulkan_material_shader;
 
 typedef struct {

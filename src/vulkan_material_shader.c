@@ -23,6 +23,7 @@
 #include <logger.h>
 #include <kmemory.h>
 #include <vulkan_buffer.h>
+#include <texture_system.h>
 #include <vulkan_pipeline.h>
 #include <vulkan_shader_utils.h>
 #include <vulkan_material_shader.h>
@@ -30,11 +31,7 @@
 #define ATTRIBUTE_COUNT 2
 #define BUILTIN_MATERIAL_SHADER_NAME_OBJECT "builtin.material"
 
-b8 vulkan_material_shader_create(vulkan_context *context,
-                                 texture *fallback_diffuse,
-                                 vulkan_material_shader *out_shader) {
-  out_shader->fallback_diffuse = fallback_diffuse;
-
+b8 vulkan_material_shader_create(vulkan_context *context, vulkan_material_shader *out_shader) {
   char *stage_type_names[] = { "vert", "frag" };
   VkShaderStageFlagBits stage_types[] = {
     VK_SHADER_STAGE_VERTEX_BIT,
@@ -394,16 +391,19 @@ void vulkan_material_shader_update_object(vulkan_context *context,
   for (u32 i = 0; i < sampler_count; ++i) {
     texture *t = data.textures[i];
     u32 *descriptor_gen = &object_state->descriptor_states[descriptor_idx].generations[image_idx];
+    u32 *descriptor_id = &object_state->descriptor_states[descriptor_idx].ids[image_idx];
 
     // If no texture is loaded, use the fallback one
     // TODO: use multiple fallback textures and select most appropiate one
     if (t->generation == INVALID_ID) {
-      t = shader->fallback_diffuse;
+      t = texture_system_get_fallback();
       *descriptor_gen = INVALID_ID;
     }
 
     // If descriptor needs to be updated
-    if (t && (*descriptor_gen != t->generation || *descriptor_gen == INVALID_ID)) {
+    if (t && (*descriptor_id != t->id          ||
+              *descriptor_gen != t->generation ||
+              *descriptor_gen == INVALID_ID)) {
       vulkan_texture_data *internal_data = (vulkan_texture_data *) t->data;
       // Assign view & sampler
       image_infos[i] = (VkDescriptorImageInfo) {
@@ -421,7 +421,10 @@ void vulkan_material_shader_update_object(vulkan_context *context,
       };
       ++descriptor_count;
       // Sync frame generation if not using default/fallback texture
-      if (t->generation != INVALID_ID) *descriptor_gen = t->generation;
+      if (t->generation != INVALID_ID) {
+        *descriptor_gen = t->generation;
+        *descriptor_id = t->id;
+      }
       ++descriptor_idx;
     }
   }
@@ -450,6 +453,7 @@ b8 vulkan_material_shader_get_resources(vulkan_context *context,
   for (u32 i = 0; i < MATERIAL_SHADER_OBJECT_DESCRIPTOR_NUMBER; ++i) {
     for (u32 j = 0; j < MATERIAL_SHADER_DESCRIPTOR_COUNT; ++j) {
       object_state->descriptor_states[i].generations[j] = INVALID_ID;
+      object_state->descriptor_states[i].ids[j] = INVALID_ID;
     }
   }
 
@@ -490,6 +494,7 @@ void vulkan_material_shader_release_resources(vulkan_context *context,
   for (u32 i = 0; i < MATERIAL_SHADER_OBJECT_DESCRIPTOR_NUMBER; ++i) {
     for (u32 j = 0; j < MATERIAL_SHADER_DESCRIPTOR_COUNT; ++j) {
       object_state->descriptor_states[i].generations[j] = INVALID_ID;
+      object_state->descriptor_states[i].ids[j] = INVALID_ID;
     }
   }
 }

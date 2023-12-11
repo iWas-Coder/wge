@@ -407,9 +407,7 @@ b8 vulkan_renderer_backend_initialize(renderer_backend *backend, const char *app
   for (u32 i = 0; i < context.swapchain.image_count; ++i) context.images_in_flight[i] = 0;
 
   // Create builtin shaders
-  if (!vulkan_material_shader_create(&context,
-                                     backend->fallback_diffuse,
-                                     &context.material_shader)) {
+  if (!vulkan_material_shader_create(&context, &context.material_shader)) {
     KERROR("Failed to create the builtin shader");
     return false;
   }
@@ -741,7 +739,6 @@ void vulkan_renderer_backend_update_object(geometry_render_data data) {
 }
 
 void vulkan_renderer_backend_create_texture(const char *name,
-                                            b8 auto_release,
                                             i32 width,
                                             i32 height,
                                             i32 channel_count,
@@ -749,7 +746,6 @@ void vulkan_renderer_backend_create_texture(const char *name,
                                             b8 has_transparency,
                                             texture *out_texture) {
   (void) name;          // Unused parameter
-  (void) auto_release;  // Unused parameter
 
   out_texture->width = width;
   out_texture->height = height;

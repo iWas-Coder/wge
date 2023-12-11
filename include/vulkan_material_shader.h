@@ -24,9 +24,7 @@
 #include <vulkan_types.h>
 #include <renderer_types.h>
 
-b8 vulkan_material_shader_create(vulkan_context *context,
-                                 texture *fallback_diffuse,
-                                 vulkan_material_shader *out_shader);
+b8 vulkan_material_shader_create(vulkan_context *context, vulkan_material_shader *out_shader);
 
 void vulkan_material_shader_destroy(vulkan_context *context, vulkan_material_shader *shader);
 

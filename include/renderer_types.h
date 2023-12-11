@@ -59,7 +59,6 @@ typedef struct {
 
 typedef struct renderer_backend {
   u64 frame_number;
-  texture *fallback_diffuse;
   b8 (*initialize)(struct renderer_backend *backend, const char *application_name);
   void (*shutdown)(struct renderer_backend *backend);
   void (*resized)(struct renderer_backend *backend, u16 width, u16 height);
@@ -68,7 +67,6 @@ typedef struct renderer_backend {
   b8 (*end_frame)(struct renderer_backend *backend, f32 delta_time);
   void (*update_object)(geometry_render_data data);
   void (*create_texture)(const char *name,
-                         b8 auto_release,
                          i32 width,
                          i32 height,
                          i32 channel_count,

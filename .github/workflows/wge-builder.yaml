@@ -1,0 +1,52 @@
+name: wge/builder
+
+on:
+  push:
+    branches: [master]
+
+env:
+  IMAGE_NAME: ${{ github.workflow }}
+  IMAGE_TAGS: latest ${{ github.ref }}
+  REGISTRY: ghcr.io/${{ github.repository_owner }}
+  REGISTRY_USER: ${{ github.actor }}
+  REGISTRY_PWD: ${{ github.token }}
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: checkout-repo
+        uses: actions/checkout@v4
+      - name: build-image
+        uses: redhat-actions/buildah-build@v2
+        with:
+          image: ${{ env.IMAGE_NAME }}
+          tags: ${{ env.IMAGE_TAGS }}
+          containerfiles: |
+            ./Containerfile
+      - name: upload-artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: containers
+          path: /var/lib/containers
+  push:
+    needs: [build]
+    runs-on: ubuntu-latest
+    steps:
+      - name: download-artifact
+        uses: actions/download-artifact@v3
+        with:
+          name: containers
+          path: /var/lib/containers
+      - name: push-registry
+        uses: redhat-actions/push-to-registry@v2
+        with:
+          image: ${{ env.IMAGE_NAME }}
+          tags: ${{ env.IMAGE_TAGS }}
+          registry: ${{ env.REGISTRY }}
+          username: ${{ env.REGISTRY_USER }}
+          password: ${{ env.REGISTRY_PWD }}

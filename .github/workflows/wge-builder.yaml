@@ -29,6 +29,7 @@ jobs:
           tags: ${{ env.IMAGE_TAGS }}
           containerfiles: |
             ./Containerfile
+          archs: amd64 arm64
       - name: push
         uses: redhat-actions/push-to-registry@v2
         with:

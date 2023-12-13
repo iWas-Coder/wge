@@ -161,7 +161,7 @@ ALL_TGTS = $(ETAGS_XREF) $(DIR_TGTS) $(TGTS)
 ###################
 # === TARGETS === #
 ###################
-.PHONY: all $(TGTS) check clean mrproper help
+.PHONY: all $(TGTS) check clean mrproper version help
 
 all: $(ALL_TGTS)
 	@:
@@ -235,6 +235,9 @@ mrproper: clean
 		fi                                      \
 	done
 
+version:
+	@echo $(FULL_VERSION)
+
 help:
 	@echo "Variables"
 	@echo "========="
@@ -252,6 +255,7 @@ help:
 	@echo "  install  :: <TBD> Install WGE to the system"
 	@echo "  clean    :: Remove the 'build' directory (where the '.o' object files live)"
 	@echo "  mrproper :: Remove and cleans everything"
+	@echo "  version  :: Shows the current checkout version string"
 	@echo "  help     :: Shows this help and usage panel"
 	@echo
 	@echo "Execute 'make' or 'make all' to build all targets marked with [*]"

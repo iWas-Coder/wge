@@ -1,9 +1,9 @@
-name: wge/builder
+name: wge/cli/builder
 
 on:
   push:
     branches: [master]
-    paths: ['Containerfile']
+    paths: ['cli/Containerfile']
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
@@ -28,7 +28,7 @@ jobs:
           image: ${{ env.IMAGE_NAME }}
           tags: ${{ env.IMAGE_TAGS }}
           containerfiles: |
-            ./Containerfile
+            ./cli/Containerfile
       - name: push
         uses: redhat-actions/push-to-registry@v2
         with:

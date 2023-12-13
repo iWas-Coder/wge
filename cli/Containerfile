@@ -1,0 +1,4 @@
+FROM golang
+ARG OUT=wge-cli
+WORKDIR /wge
+ENTRYPOINT ["go", "build", "-v", "-o", "$OUT"]

@@ -21,8 +21,7 @@
 
 FROM debian:sid-slim
 RUN apt-get update && apt-get full-upgrade -y
-RUN apt-get install -y                             \
-                       git                         \
+RUN apt-get install -y git                         \
                        xcb                         \
                        clang                       \
                        glslc                       \

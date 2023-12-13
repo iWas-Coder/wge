@@ -1,0 +1,6 @@
+version: 2
+updates:
+  - package-ecosystem: gomod
+    directory: cli
+    schedule:
+      interval: weekly

@@ -1,0 +1,34 @@
+#+AUTHOR: Wasym A. Alonso
+#+TITLE: WGE: CLI
+
+#+CAPTION: WGE-CLI logo
+[[assets/logo.png]]
+
+(...)
+
+#+BEGIN_QUOTE
+This work and all its documentation is licensed under the Creative Commons Attribution-ShareAlike 4.0 International (CC BY-SA 4.0) License. @@html:<br>@@
+This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version. @@html:<br>@@
+This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
+#+END_QUOTE
+
+* Table of Contents :toc:
+- [[#build][Build]]
+- [[#usage][Usage]]
+
+* Build
+
+To build this Go module, do:
+#+begin_src sh
+$  go build -v -o wge-cli [-ldflags '-s -w']
+#+end_src
+If Go is not available in your environment, the module can be built using the provided ~Containerfile~ as follows:
+#+begin_src sh
+$  {buildah, podman, docker} build -t wge/cli/builder
+$  {podman, docker} run --rm -v $(pwd):/wge wge/cli/builder [-ldflags '-s -w']
+#+end_src
+(...)
+
+* Usage
+
+(...)

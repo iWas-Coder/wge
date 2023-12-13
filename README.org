@@ -112,6 +112,18 @@ mindmap
 
 * Build
 
+(...)
+
+#+begin_src sh
+$  git clone https://github.com/iWas-Coder/wge --recurse-submodules
+#+end_src
+(...)
+#+begin_src sh
+$  git clone https://github.com/iWas-Coder/wge && cd wge
+$  git submodule init
+$  git submodule update
+#+end_src
+
 WGE ships with a ready-to-go ~Makefile~, so *GNU Make* is needed in order to build the engine. It is as simple as doing:
 #+begin_src sh
 $  make

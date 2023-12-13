@@ -18,12 +18,15 @@ This program is distributed in the hope that it will be useful, but WITHOUT ANY 
 
 * Build
 
-(...)
-
+To build this Go module, do:
 #+begin_src sh
 $  go build -v -o wge-cli [-ldflags '-s -w']
 #+end_src
-
+If Go is not available in your environment, the module can be built using the provided ~Containerfile~ as follows:
+#+begin_src sh
+$  {buildah, podman, docker} build -t wge/cli/builder
+$  {podman, docker} run --rm -v $(pwd):/wge wge/cli/builder [-ldflags '-s -w']
+#+end_src
 (...)
 
 * Usage

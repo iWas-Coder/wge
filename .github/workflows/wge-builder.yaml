@@ -1,9 +1,8 @@
-name: wge/builder
+name: wge-builder
 
 on:
   push:
     branches: [master]
-    paths: ['Containerfile']
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
@@ -12,29 +11,32 @@ concurrency:
 env:
   IMAGE_NAME: ${{ github.workflow }}
   IMAGE_TAGS: latest ${{ github.sha }}
-  REGISTRY: ghcr.io/${{ github.repository_owner }}
+  REGISTRY: docker://ghcr.io/iwas-coder
   REGISTRY_USER: ${{ github.actor }}
   REGISTRY_PWD: ${{ github.token }}
 
 jobs:
   build-and-push:
     runs-on: ubuntu-latest
+    permissions: write-all
     steps:
       - name: checkout-repo
         uses: actions/checkout@v4
       - name: build
+        id: build
         uses: redhat-actions/buildah-build@v2
         with:
           image: ${{ env.IMAGE_NAME }}
           tags: ${{ env.IMAGE_TAGS }}
           containerfiles: |
             ./Containerfile
-          platforms: linux/amd64 linux/arm64/v8
       - name: push
         uses: redhat-actions/push-to-registry@v2
         with:
-          image: ${{ env.IMAGE_NAME }}
-          tags: ${{ env.IMAGE_TAGS }}
+          image: ${{ steps.build.outputs.image }}
+          tags: ${{ steps.build.outputs.tags }}
           registry: ${{ env.REGISTRY }}
           username: ${{ env.REGISTRY_USER }}
           password: ${{ env.REGISTRY_PWD }}
+          extra-args: |
+            --disable-content-trust

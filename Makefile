@@ -170,13 +170,13 @@ ALL_TGTS = $(ETAGS_XREF) $(DIR_TGTS) $(TGTS)
 all: $(ALL_TGTS)
 	@:
 
-wge: $(WGE_OUT)
+wge: $(BUILD_DIR) $(WGE_OUT)
 	@echo "Engine: $< is ready  ($(FULL_VERSION))"
 
-check: $(TEST_OUT)
-	@LD_LIBRARY_PATH=$$(pwd):$$LD_LIBRARY_PATH ./$<
+check: $(TEST_BUILD_DIR) $(TEST_OUT)
+	@LD_LIBRARY_PATH=$$(pwd):$$LD_LIBRARY_PATH ./$(TEST_OUT)
 
-shaders: $(SHADERS_OUT)
+shaders: $(SHADERS_BUILD_DIR) $(SHADERS_OUT)
 	@:
 
 $(ETAGS_XREF): $(SRCS) $(HDRS)

@@ -18,6 +18,13 @@
 <a href="https://www.codefactor.io/repository/github/iwas-coder/wge"><img src="https://www.codefactor.io/repository/github/iwas-coder/wge/badge" alt="Code QA"></a>
 </p>
 #+end_html
+#+begin_html
+<p align="center">
+<a href="https://github.com/iWas-Coder/wge/actions/workflows/build-test.yaml"><img src="https://github.com/iWas-Coder/wge/actions/workflows/build-test.yaml/badge.svg" alt="WGE CI: Build & Test"></a>
+<a href="https://github.com/iWas-Coder/wge/actions/workflows/wge-builder.yaml"><img src="https://github.com/iWas-Coder/wge/actions/workflows/wge-builder.yaml/badge.svg" alt="WGE CI: Build & Push image that builds WGE"></a>
+<a href="https://github.com/iWas-Coder/wge/actions/workflows/wge-cli-builder.yaml"><img src="https://github.com/iWas-Coder/wge/actions/workflows/wge-cli-builder.yaml/badge.svg" alt="WGE CI: Build & Push image that builds WGE"></a>
+</p>
+#+end_html
 
 (...)
 

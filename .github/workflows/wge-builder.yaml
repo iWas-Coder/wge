@@ -3,6 +3,7 @@ name: wge/builder
 on:
   push:
     branches: [master]
+    paths: ['Containerfile']
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}

@@ -8,6 +8,7 @@ import (
   "io/ioutil"
   "gopkg.in/yaml.v2"
   "github.com/spf13/cobra"
+  "github.com/go-git/go-git/v5"
   "github.com/manifoldco/promptui"
 )
 
@@ -19,7 +20,6 @@ type Config struct {
 var (
   cfg Config
   cfgFile string
-  tpl = "github.com/iWas-Coder/"
   newCmd = &cobra.Command{
     Use:   "new",
     Short: "Create a game powered by WGE",
@@ -40,7 +40,7 @@ var (
         }
         form()
       }
-      showCfg()
+      cloneTemplate(selectTemplate())
     },
   }
 )
@@ -49,12 +49,24 @@ func init() {
   newCmd.Flags().StringVarP(&cfgFile, "config", "c", "", "Use a predefined YAML config file")
 }
 
-func showCfg() {
-  yamlData, err := yaml.Marshal(&cfg)
+func cloneTemplate(url string) {
+  _, err := git.PlainClone(cfg.ProjectName, false, &git.CloneOptions{
+    URL:      "https://" + url,
+    Progress: os.Stdout,
+  })
   if err != nil {
-    fmt.Printf("[ERROR]: YAML marshaling failed %v\n", err)
+    fmt.Printf("[ERROR]: Git clone failed (%v)\n", err)
     os.Exit(1)
   }
+}
+
+func selectTemplate() string {
+  yamlData, err := yaml.Marshal(&cfg)
+  if err != nil {
+    fmt.Printf("[ERROR]: YAML marshaling failed (%v)\n", err)
+    os.Exit(1)
+  }
+  tpl := "github.com/iWas-Coder/"
   fmt.Println(string(yamlData))
   if cfg.GeometryType == "2D" {
     tpl += "wge-2d-game-template"
@@ -62,6 +74,7 @@ func showCfg() {
     tpl += "wge-3d-game-template"
   }
   fmt.Printf("Selected template: %s\n", tpl)
+  return tpl
 }
 
 func parseCfgFile() {

@@ -19,11 +19,24 @@
  */
 
 
-#version 450
-// #extension GL_ARG_separate_shader_objects : enable
+#pragma once
 
-layout(location = 0) out vec4 out_color;
+#include <renderer_types.h>
 
-void main(void) {
-  out_color = vec4(1.0);
-}
+#define FALLBACK_TEXTURE_NAME "fallback"
+
+typedef struct {
+  u32 max_texture_count;
+} texture_system_config;
+
+b8 texture_system_initialize(u64 *memory_requirements,
+                             void *state,
+                             texture_system_config config);
+
+void texture_system_shutdown(void *state);
+
+texture *texture_system_get(const char *name, b8 auto_release);
+
+texture *texture_system_get_fallback(void);
+
+void texture_system_release(const char *name);

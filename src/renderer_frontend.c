@@ -22,8 +22,12 @@
 #include <kmath.h>
 #include <logger.h>
 #include <kmemory.h>
+#include <texture_system.h>
 #include <renderer_backend.h>
 #include <renderer_frontend.h>
+
+// TEMPORARY include
+#include <event.h>
 
 #define PROJ_MATRIX_ASPECT_RATIO (16 / 9.0f)
 
@@ -33,9 +37,33 @@ typedef struct {
   Matrix4 view;
   f32 near_clip;
   f32 far_clip;
+  // TEMPORARY texture to test things out
+  texture *test_diffuse;
 } renderer_system_state;
 
 static renderer_system_state *state_ptr;
+
+// TEMPORARY function to handle event which swaps the texture while app is running
+b8 event_on_debug(u16 code, void *sender, void *listener_inst, event_context data) {
+  (void) code;           // Unused parameter
+  (void) sender;         // Unused parameter
+  (void) listener_inst;  // Unused parameter
+  (void) data;           // Unused parameter
+
+  const char *names[] = {
+    "cobblestone",
+    "paving",
+    "paving2"
+  };
+  static u8 choice = 2;
+  const char *old_name = names[choice];
+  ++choice;
+  choice %= 3;
+
+  state_ptr->test_diffuse = texture_system_get(names[choice], true);
+  texture_system_release(old_name);
+  return true;
+}
 
 b8 renderer_system_initialize(u64 *memory_requirements,
                               void *state,
@@ -43,6 +71,9 @@ b8 renderer_system_initialize(u64 *memory_requirements,
   *memory_requirements = sizeof(renderer_system_state);
   if (!state) return true;
   state_ptr = state;
+
+  // TEMPORARY register for the debug event to swap textures
+  event_register(EVENT_CODE_DEBUG0, state_ptr, event_on_debug);
 
   renderer_backend_create(RENDERER_BACKEND_TYPE_VULKAN, &state_ptr->backend);
   state_ptr->backend.frame_number = 0;
@@ -67,6 +98,9 @@ void renderer_system_shutdown(void *state) {
   (void) state;  // Unused parameter
 
   if (!state_ptr) return;
+  // TEMPORARY unregister for the debug event to swap textures
+  event_unregister(EVENT_CODE_DEBUG0, state_ptr, event_on_debug);
+
   state_ptr->backend.shutdown(&state_ptr->backend);
   state_ptr = 0;
 }
@@ -74,9 +108,9 @@ void renderer_system_shutdown(void *state) {
 void renderer_on_resized(u16 width, u16 height) {
   if (state_ptr) {
     state_ptr->proj = mat4_persp_proj(deg_to_rad(45.0f),
-                                     (f32) width / height,
-                                     state_ptr->near_clip,
-                                     state_ptr->far_clip);
+                                      (f32) width / height,
+                                      state_ptr->near_clip,
+                                      state_ptr->far_clip);
     state_ptr->backend.resized(&state_ptr->backend, width, height);
   }
   else KWARN("renderer_on_resized :: Renderer backend does not exist");
@@ -100,10 +134,17 @@ b8 renderer_draw_frame(render_packet *packet) {
 
     // Object rotation per frame
     static f32 angle = 0.01f;
-    angle += 0.001f;
+    angle += 0.0001f;
     Quaternion rot = euler_to_quat(vec3_forward(), angle, false);
+
     Matrix4 model = quat_to_mat4_center(rot, vec3_zero());
-    state_ptr->backend.update_object(model);
+    if (!state_ptr->test_diffuse) state_ptr->test_diffuse = texture_system_get_fallback();
+    geometry_render_data data = {
+      .object_id = 0,
+      .model = model,
+      .textures[0] = state_ptr->test_diffuse  // TEMPORARY texture
+    };
+    state_ptr->backend.update_object(data);
 
     b8 result = renderer_end_frame(packet->delta_time);
     if (!result) {
@@ -119,7 +160,6 @@ void renderer_set_view(Matrix4 view) {
 }
 
 void renderer_create_texture(const char *name,
-                             b8 auto_release,
                              i32 width,
                              i32 height,
                              i32 channel_count,
@@ -127,13 +167,12 @@ void renderer_create_texture(const char *name,
                              b8 has_transparency,
                              texture *out_texture) {
   state_ptr->backend.create_texture(name,
-                                   auto_release,
-                                   width,
-                                   height,
-                                   channel_count,
-                                   pixels,
-                                   has_transparency,
-                                   out_texture);
+                                    width,
+                                    height,
+                                    channel_count,
+                                    pixels,
+                                    has_transparency,
+                                    out_texture);
 }
 
 void renderer_destroy_texture(texture *texture) {

@@ -19,15 +19,21 @@
  */
 
 
-#pragma once
+#version 450
+// #extension GL_ARG_separate_shader_objects : enable
 
-#include <vulkan_types.h>
-#include <renderer_types.h>
+layout(location = 0) flat in int in_mode;
+layout(location = 1) in struct dto {
+  vec2 texcoord;
+} in_dto;
 
-b8 vulkan_object_shader_create(vulkan_context *context, vulkan_object_shader *out_shader);
-void vulkan_object_shader_destroy(vulkan_context *context, vulkan_object_shader *shader);
-void vulkan_object_shader_use(vulkan_context *context, vulkan_object_shader *shader);
-void vulkan_object_shader_update(vulkan_context *context, vulkan_object_shader *shader);
-void vulkan_object_shader_update_object(vulkan_context *context,
-                                        vulkan_object_shader *shader,
-                                        Matrix4 model);
+layout(set = 1, binding = 0) uniform local_uniform_object {
+  vec4 diffuse_color;
+} object_ubo;
+layout(set = 1, binding = 1) uniform sampler2D diffuse_sampler;
+
+layout(location = 0) out vec4 out_color;
+
+void main(void) {
+  out_color = object_ubo.diffuse_color * texture(diffuse_sampler, in_dto.texcoord);
+}

@@ -21,14 +21,4 @@
 
 #pragma once
 
-#include <defines.h>
-
-#define PASS 2
-#define STATUS_MAX_LEN 20
-#define REGISTER_TEST(f) test_manager_register(f, #f)
-
-typedef u8 (*PFN_test)(void);
-
-void test_manager_init(void);
-void test_manager_register(PFN_test, char *desc);
-void test_manager_run(void);
+void hash_table_test_register(void);

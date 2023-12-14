@@ -26,13 +26,16 @@
 VERSION       = 0
 PATCHLEVEL    = 1
 SUBLEVEL      = 0
-EXTRAVERSION := $(or $(and $(wildcard .git/), -$$(git rev-parse --short HEAD)),)
+EXTRAVERSION  =
+EXTRAVERSION += $(or $(and $(wildcard .git/), -git+$$(git rev-parse --short HEAD)),)
+NAME = Greased Wildebeest
+
+# Version formatting
 ifeq ($(SUBLEVEL), 0)
   FULL_VERSION = $(VERSION).$(PATCHLEVEL)$(EXTRAVERSION)
 else
   FULL_VERSION = $(VERSION).$(PATCHLEVEL).$(SUBLEVEL)$(EXTRAVERSION)
 endif
-NAME = Greased Wildebeest
 
 # Pretty Printing Output (PPO)
 PPO_MKDIR = MKDIR
@@ -82,6 +85,7 @@ SRC_DIR              = src
 HDR_DIR              = include
 TEST_DIR             = test
 SHADERS_DIR          = shaders
+VENDOR_DIR           = vendor
 BUILD_DIR_PARENT     = build
 BUILD_DIR_LINUX      = $(BUILD_DIR_PARENT)/linux
 BUILD_DIR_WIN        = $(BUILD_DIR_PARENT)/windows
@@ -102,7 +106,7 @@ SHADERS_SPVS := $(patsubst $(SHADERS_DIR)/%.glsl, $(SHADERS_BUILD_DIR)/%.spv, $(
 
 # Build flags: Common
 GLSL_CC = glslc
-CPPFLAGS_COMMON = -I $(HDR_DIR) -I $(TEST_DIR)/$(HDR_DIR)
+CPPFLAGS_COMMON = -I $(HDR_DIR) -I $(TEST_DIR)/$(HDR_DIR) -I $(VENDOR_DIR)
 ### DEBUG version
 ifndef RELEASE
   CPP_MACROS_COMMON   = -DKEXPORT -D_DEBUG
@@ -166,13 +170,13 @@ ALL_TGTS = $(ETAGS_XREF) $(DIR_TGTS) $(TGTS)
 all: $(ALL_TGTS)
 	@:
 
-wge: $(WGE_OUT)
+wge: $(BUILD_DIR) $(WGE_OUT)
 	@echo "Engine: $< is ready  ($(FULL_VERSION))"
 
-check: $(TEST_OUT)
-	@LD_LIBRARY_PATH=$$(pwd):$$LD_LIBRARY_PATH ./$<
+check: $(TEST_BUILD_DIR) $(TEST_OUT)
+	@LD_LIBRARY_PATH=$$(pwd):$$LD_LIBRARY_PATH ./$(TEST_OUT)
 
-shaders: $(SHADERS_OUT)
+shaders: $(SHADERS_BUILD_DIR) $(SHADERS_OUT)
 	@:
 
 $(ETAGS_XREF): $(SRCS) $(HDRS)

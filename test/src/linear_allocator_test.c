@@ -112,14 +112,9 @@ u8 linear_allocator_test_multi_alloc_all_free(void) {
 }
 
 void linear_allocator_test_register(void) {
-  test_manager_register(linear_allocator_test_create_destroy,
-                        "linear_allocator_test_create_destroy");
-  test_manager_register(linear_allocator_test_single_alloc_all,
-                        "linear_allocator_test_single_alloc_all");
-  test_manager_register(linear_allocator_test_multi_alloc_all,
-                        "linear_allocator_test_multi_alloc_all");
-  test_manager_register(linear_allocator_test_multi_alloc_overflow,
-                        "linear_allocator_test_multi_alloc_overflow");
-  test_manager_register(linear_allocator_test_multi_alloc_all_free,
-                        "linear_allocator_test_multi_alloc_all_free");
+  REGISTER_TEST(linear_allocator_test_create_destroy);
+  REGISTER_TEST(linear_allocator_test_single_alloc_all);
+  REGISTER_TEST(linear_allocator_test_multi_alloc_all);
+  REGISTER_TEST(linear_allocator_test_multi_alloc_overflow);
+  REGISTER_TEST(linear_allocator_test_multi_alloc_all_free);
 }

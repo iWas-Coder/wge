@@ -26,8 +26,10 @@
 #include <vulkan/vulkan.h>
 #include <renderer_types.h>
 
-#define OBJECT_SHADER_STAGE_COUNT 2  // vertex and fragment shaders
-#define OBJECT_SHADER_DESCRIPTOR_COUNT 8
+#define MATERIAL_SHADER_STAGE_COUNT 2  // vertex and fragment shaders
+#define MATERIAL_SHADER_DESCRIPTOR_COUNT 8
+#define MATERIAL_SHADER_OBJECT_DESCRIPTOR_NUMBER 2
+#define MATERIAL_SHADER_MAX_OBJECTS 1024
 #define VK_CHECK(e) KASSERT(e == VK_SUCCESS)
 
 typedef struct {
@@ -65,6 +67,7 @@ typedef struct {
   VkPhysicalDeviceFeatures features;
   VkPhysicalDeviceMemoryProperties memory;
   VkFormat depth_format;
+  b8 supports_device_local_host_visible;
 } vulkan_device;
 
 typedef struct {
@@ -142,14 +145,30 @@ typedef struct {
 } vulkan_pipeline;
 
 typedef struct {
-  vulkan_shader_stage stages[OBJECT_SHADER_STAGE_COUNT];
+  u32 generations[MATERIAL_SHADER_DESCRIPTOR_COUNT];
+  u32 ids[MATERIAL_SHADER_DESCRIPTOR_COUNT];
+} vulkan_descriptor_state;
+
+typedef struct {
+  VkDescriptorSet descriptor_sets[MATERIAL_SHADER_DESCRIPTOR_COUNT];
+  vulkan_descriptor_state descriptor_states[MATERIAL_SHADER_OBJECT_DESCRIPTOR_NUMBER];
+} vulkan_material_shader_object_state;
+
+typedef struct {
+  vulkan_shader_stage stages[MATERIAL_SHADER_STAGE_COUNT];
   vulkan_pipeline pipeline;
   VkDescriptorPool global_descriptor_pool;
-  VkDescriptorSet global_descriptor_sets[OBJECT_SHADER_DESCRIPTOR_COUNT];
+  VkDescriptorPool object_descriptor_pool;
+  VkDescriptorSet global_descriptor_sets[MATERIAL_SHADER_DESCRIPTOR_COUNT];
   VkDescriptorSetLayout global_descriptor_set_layout;
+  VkDescriptorSetLayout object_descriptor_set_layout;
   global_uniform_object global_ubo;
   vulkan_buffer global_uniform_buffer;
-} vulkan_object_shader;
+  vulkan_buffer object_uniform_buffer;
+  // TODO: manage this with a free list
+  u32 object_uniform_buffer_index;
+  vulkan_material_shader_object_state object_states[MATERIAL_SHADER_MAX_OBJECTS];
+} vulkan_material_shader;
 
 typedef struct {
   VkInstance instance;
@@ -176,10 +195,11 @@ typedef struct {
   u32 image_index;
   u32 current_frame;
   b8 recreating_swapchain;
-  vulkan_object_shader object_shader;
+  vulkan_material_shader material_shader;
   u64 geometry_vertex_offset;
   u64 geometry_index_offset;
   i32 (*find_memory_index)(u32 type_filter, u32 property_flags);
+  f32 frame_delta_time;
 } vulkan_context;
 
 typedef struct {

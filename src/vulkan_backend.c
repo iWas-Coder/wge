@@ -36,7 +36,7 @@
 #include <vulkan_swapchain.h>
 #include <vulkan_renderpass.h>
 #include <vulkan_framebuffer.h>
-#include <vulkan_object_shader.h>
+#include <vulkan_material_shader.h>
 #include <vulkan_command_buffer.h>
 
 static vulkan_context context;
@@ -407,7 +407,7 @@ b8 vulkan_renderer_backend_initialize(renderer_backend *backend, const char *app
   for (u32 i = 0; i < context.swapchain.image_count; ++i) context.images_in_flight[i] = 0;
 
   // Create builtin shaders
-  if (!vulkan_object_shader_create(&context, &context.object_shader)) {
+  if (!vulkan_material_shader_create(&context, &context.material_shader)) {
     KERROR("Failed to create the builtin shader");
     return false;
   }
@@ -419,24 +419,32 @@ b8 vulkan_renderer_backend_initialize(renderer_backend *backend, const char *app
   const u32 n_vertex = 4;
   const u32 n_index = 6;
   const f32 factor = 10.0f;
-  vertex_3d vertex_list[n_vertex];
-  kzero_memory(vertex_list, sizeof(vertex_3d) * n_vertex);
-  vertex_list[0] = (vertex_3d) {
-    .position.x = -0.5f * factor,
-    .position.y = -0.5f * factor
-  };
-  vertex_list[1] = (vertex_3d) {
-    .position.x = 0.5f * factor,
-    .position.y = 0.5f * factor
-  };
-  vertex_list[2] = (vertex_3d) {
-    .position.x = -0.5f * factor,
-    .position.y = 0.5f * factor
-  };
-  vertex_list[3] = (vertex_3d) {
-    .position.x = 0.5f * factor,
-    .position.y = -0.5f * factor
-  };
+  vertex_3d vertex_list[] = {
+    {
+      .position.x = -0.5f * factor,
+      .position.y = -0.5f * factor,
+      .texcoord.x = 0.0f,
+      .texcoord.y = 0.0f
+    },
+    {
+      .position.x = 0.5f * factor,
+      .position.y = 0.5f * factor,
+      .texcoord.x = 1.0f,
+      .texcoord.y = 1.0f
+    },
+    {
+      .position.x = -0.5f * factor,
+      .position.y = 0.5f * factor,
+      .texcoord.x = 0.0f,
+      .texcoord.y = 1.0f
+    },
+    {
+      .position.x = 0.5f * factor,
+      .position.y = -0.5f * factor,
+      .texcoord.x = 1.0f,
+      .texcoord.y = 0.0f
+    }};
+
   u32 index_list[] = {0, 1, 2, 0, 3, 1};
   upload_data_range(&context,
                     context.device.graphics_command_pool,
@@ -454,6 +462,14 @@ b8 vulkan_renderer_backend_initialize(renderer_backend *backend, const char *app
                     0,
                     sizeof(u32) * n_index,
                     index_list);
+
+  u32 object_id = 0;
+  if (!vulkan_material_shader_get_resources(&context,
+                                            &context.material_shader,
+                                            &object_id)) {
+    KERROR("Failed to get shader resources");
+    return false;
+  }
   // END OF TEMPORARY GEOMETRY TEST
 
   KINFO("Vulkan renderer initialized");
@@ -469,7 +485,7 @@ void vulkan_renderer_backend_shutdown(renderer_backend *backend) {
   vulkan_buffer_destroy(&context, &context.object_vertex_buffer);
   vulkan_buffer_destroy(&context, &context.object_index_buffer);
 
-  vulkan_object_shader_destroy(&context, &context.object_shader);
+  vulkan_material_shader_destroy(&context, &context.material_shader);
 
   // Destroy semaphores & fences
   for (u8 i = 0; i < context.swapchain.max_frames_in_flight; ++i) {
@@ -558,8 +574,7 @@ void vulkan_renderer_backend_on_resized(renderer_backend *backend, u16 width, u1
 }
 
 b8 vulkan_renderer_backend_begin_frame(renderer_backend *backend, f32 delta_time) {
-  (void) delta_time;  // Unused parameter
-
+  context.frame_delta_time = delta_time;
   vulkan_device *device = &context.device;
 
   // Swapchain recreation
@@ -640,10 +655,10 @@ void vulkan_renderer_backend_update(Matrix4 proj,
   (void) ambient_color;  // Unused parameter
   (void) mode;           // Unused parameter
 
-  vulkan_object_shader_use(&context, &context.object_shader);
-  context.object_shader.global_ubo.proj = proj;
-  context.object_shader.global_ubo.view = view;
-  vulkan_object_shader_update(&context, &context.object_shader);
+  vulkan_material_shader_use(&context, &context.material_shader);
+  context.material_shader.global_ubo.proj = proj;
+  context.material_shader.global_ubo.view = view;
+  vulkan_material_shader_update(&context, &context.material_shader, context.frame_delta_time);
 }
 
 b8 vulkan_renderer_backend_end_frame(renderer_backend *backend, f32 delta_time) {
@@ -698,13 +713,12 @@ b8 vulkan_renderer_backend_end_frame(renderer_backend *backend, f32 delta_time) 
   return true;
 }
 
-void vulkan_renderer_backend_update_object(Matrix4 model) {
-  vulkan_object_shader_update_object(&context, &context.object_shader, model);
-
+void vulkan_renderer_backend_update_object(geometry_render_data data) {
   vulkan_command_buffer *command_buffer = &context.graphics_command_buffers[context.image_index];
+  vulkan_material_shader_update_object(&context, &context.material_shader, data);
 
   // START OF TEMPORARY GEOMETRY TEST
-  vulkan_object_shader_use(&context, &context.object_shader);
+  vulkan_material_shader_use(&context, &context.material_shader);
   VkDeviceSize offsets[] = {0};
   vkCmdBindVertexBuffers(command_buffer->handle,
                          0,
@@ -725,7 +739,6 @@ void vulkan_renderer_backend_update_object(Matrix4 model) {
 }
 
 void vulkan_renderer_backend_create_texture(const char *name,
-                                            b8 auto_release,
                                             i32 width,
                                             i32 height,
                                             i32 channel_count,
@@ -733,12 +746,11 @@ void vulkan_renderer_backend_create_texture(const char *name,
                                             b8 has_transparency,
                                             texture *out_texture) {
   (void) name;          // Unused parameter
-  (void) auto_release;  // Unused parameter
 
   out_texture->width = width;
   out_texture->height = height;
   out_texture->channel_count = channel_count;
-  out_texture->generation = 0;
+  out_texture->generation = INVALID_ID;
 
   // Internal data
   out_texture->data = (vulkan_texture_data *) kallocate(sizeof(vulkan_texture_data), MEMORY_TAG_TEXTURE);
@@ -803,6 +815,7 @@ void vulkan_renderer_backend_create_texture(const char *name,
 
   // End command buffer
   vulkan_command_buffer_oneshot_end(&context, pool, &cmd_buf, queue);
+  vulkan_buffer_destroy(&context, &buf);
 
   // Create texture sampler
   VkSamplerCreateInfo sampler_info = {
@@ -836,13 +849,17 @@ void vulkan_renderer_backend_create_texture(const char *name,
 }
 
 void vulkan_renderer_backend_destroy_texture(texture *in_texture) {
+  vkDeviceWaitIdle(context.device.logical_device);
+
   vulkan_texture_data *data = (vulkan_texture_data *) in_texture->data;
-
-  vulkan_image_destroy(&context, &data->image);
-  kzero_memory(&data->image, sizeof(vulkan_image));
-  vkDestroySampler(context.device.logical_device, data->sampler, context.allocator);
-  data->sampler = 0;
-
-  kfree(in_texture->data, sizeof(vulkan_texture_data), MEMORY_TAG_TEXTURE);
+  if (data) {
+    vulkan_image_destroy(&context, &data->image);
+    kzero_memory(&data->image, sizeof(vulkan_image));
+    vkDestroySampler(context.device.logical_device,
+                     data->sampler,
+                     context.allocator);
+    data->sampler = 0;
+    kfree(in_texture->data, sizeof(vulkan_texture_data), MEMORY_TAG_TEXTURE);
+  }
   kzero_memory(in_texture, sizeof(texture));
 }

@@ -2,7 +2,14 @@
 
 **Please, include a summary of the changes and which issue(s) is/are fixed. Also include relevant motivation and context. Lastly, list any dependencies that are required for this change.**
 
-(...)
+**Issues:**
+- (...)
+---
+**Motivation and context:**
+- (...)
+---
+**Dependencies:**
+- (...)
 
 ### Development and testing equipment
 
@@ -14,7 +21,7 @@
 - **Glibc version:** (...)
 - **GCC version:** (...)
 - **Vulkan version:** (...)
-
+---
 **Please, describe the tests that you ran to verify your changes. Provide instructions so it can be reproducible. Also list any relevant details for your test configuration.**
 
 (...)

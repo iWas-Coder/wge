@@ -1,0 +1,47 @@
+name: wge-build-test
+
+on:
+  push:
+    branches: [master]
+  pull_request:
+    branches: [master]
+    types: [opened, synchronize]
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build-test:
+    runs-on: ubuntu-latest
+    container: debian:sid-slim
+    steps:
+      - name: install-dependencies
+        run: |
+          apt-get update
+          apt-get install -y git                     \
+                             xcb                     \
+                             clang                   \
+                             glslc                   \
+                             mingw-w64               \
+                             libx11-dev              \
+                             libvulkan1              \
+                             glslang-dev             \
+                             gcc-multilib            \
+                             vulkan-tools            \
+                             glslang-tools           \
+                             libvulkan-dev           \
+                             libx11-xcb-dev          \
+                             libxcb-xkb-dev          \
+                             build-essential         \
+                             libxkbcommon-x11-dev    \
+                             vulkan-validationlayers \
+                             vulkan-validationlayers-dev
+      - name: checkout-repo
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+      - name: build
+        run: make
+      - name: test
+        run: make check

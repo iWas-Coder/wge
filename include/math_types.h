@@ -68,4 +68,5 @@ typedef union {
 
 typedef struct {
   Vector3 position;
+  Vector2 texcoord;
 } vertex_3d;

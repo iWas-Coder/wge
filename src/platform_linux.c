@@ -411,7 +411,7 @@ void platform_console_write(const char *message, u8 color) {
     "1;33",  // WARN
     "1;32",  // INFO
     "1;34",  // DEBUG
-    "1;33"   // TRACE
+    "1;35"   // TRACE
   };
   printf("\033[%sm%s\033[0m", color_strings[color], message);
 }
@@ -423,7 +423,7 @@ void platform_console_write_error(const char *message, u8 color) {
     "1;33",  // WARN
     "1;32",  // INFO
     "1;34",  // DEBUG
-    "1;30"   // TRACE
+    "1;35"   // TRACE
   };
   printf("\033[%sm%s\033[0m", color_strings[color], message);
 }

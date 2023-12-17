@@ -36,12 +36,10 @@ b8 renderer_draw_frame(render_packet *packet);
 // This function should not have external visibility, but it does for now :D
 KAPI void renderer_set_view(Matrix4 view);
 
-void renderer_create_texture(const char *name,
-                             i32 width,
-                             i32 height,
-                             i32 channel_count,
-                             const u8 *pixels,
-                             b8 has_transparency,
-                             texture *out_texture);
+void renderer_create_texture(const u8 *pixels, texture *texture);
 
 void renderer_destroy_texture(texture *texture);
+
+b8 renderer_create_material(material *material);
+
+void renderer_destroy_material(material *material);

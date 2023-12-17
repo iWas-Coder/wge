@@ -40,8 +40,8 @@ void vulkan_material_shader_update_object(vulkan_context *context,
 
 b8 vulkan_material_shader_get_resources(vulkan_context *context,
                                         vulkan_material_shader *shader,
-                                        u32 *out_object_id);
+                                        material *material);
 
 void vulkan_material_shader_release_resources(vulkan_context *context,
                                               vulkan_material_shader *shader,
-                                              u32 object_id);
+                                              material *material);

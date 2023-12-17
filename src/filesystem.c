@@ -26,11 +26,14 @@
 #include <sys/stat.h>
 #include <filesystem.h>
 
-#define FS_READ_LINE_BUF_SIZE 32000  // 32K character limit
-
 KAPI b8 filesystem_exists(const char *path) {
+#ifdef _MSC_VER
+  struct _stat buf;
+  return _stat(path, &buf);
+#else
   struct stat buf;
   return stat(path, &buf) == 0;
+#endif
 }
 
 KAPI b8 filesystem_open(const char *path,
@@ -66,14 +69,15 @@ KAPI void filesystem_close(file_handle *handle) {
   handle->is_valid = false;
 }
 
-KAPI b8 filesystem_read_line(file_handle *handle, char **line) {
-  if (!handle->handle) return false;
-  char buf[FS_READ_LINE_BUF_SIZE];
-  if (fgets(buf, FS_READ_LINE_BUF_SIZE, (FILE *) handle->handle) != 0) {
-    u64 len = strlen(buf);
-    *line = kallocate((sizeof(char) * len) + 1, MEMORY_TAG_STRING);
-    strcpy(*line, buf);
-    return true;
+KAPI b8 filesystem_read_line(file_handle *handle,
+                             u64 max_len,
+                             char **line,
+                             u64 *out_line_len) {
+  if (handle->handle && line && out_line_len && max_len > 0) {
+    if (fgets(*line, max_len, (FILE *) handle->handle) != 0) {
+      *out_line_len = strlen(*line);
+      return true;
+    }
   }
   return false;
 }

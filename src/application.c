@@ -29,6 +29,7 @@
 #include <game_types.h>
 #include <application.h>
 #include <texture_system.h>
+#include <material_system.h>
 #include <linear_allocator.h>
 #include <renderer_frontend.h>
 
@@ -36,6 +37,7 @@
 #define TIME_MS_IN_S 1e3
 #define SYSTEMS_ALLOCATOR_SIZE 64 * 1024 * 1024  // 64MB
 #define TEXTURE_SYSTEM_MAX_COUNT 65536
+#define MATERIAL_SYSTEM_MAX_COUNT 4096
 
 typedef struct {
   game *game_inst;
@@ -60,6 +62,8 @@ typedef struct {
   void *renderer_system_state;
   u64 texture_system_memory_requirements;
   void *texture_system_state;
+  u64 material_system_memory_requirements;
+  void *material_system_state;
 } application_state;
 
 static application_state *app_state;
@@ -154,19 +158,22 @@ b8 application_create(game *game_inst) {
   event_system_initialize(&app_state->event_system_memory_requirements, 0);
   app_state->event_system_state = linear_allocator_alloc(&app_state->systems_allocator,
                                                         app_state->event_system_memory_requirements);
-  event_system_initialize(&app_state->event_system_memory_requirements, app_state->event_system_state);
+  event_system_initialize(&app_state->event_system_memory_requirements,
+                          app_state->event_system_state);
 
   // Initialize memory system
   memory_system_initialize(&app_state->memory_system_memory_requirements, 0);
   app_state->memory_system_state = linear_allocator_alloc(&app_state->systems_allocator,
                                                          app_state->memory_system_memory_requirements);
-  memory_system_initialize(&app_state->memory_system_memory_requirements, app_state->memory_system_state);
+  memory_system_initialize(&app_state->memory_system_memory_requirements,
+                           app_state->memory_system_state);
 
   // Initialize logging system
   initialize_logging(&app_state->logging_system_memory_requirements, 0);
   app_state->logging_system_state = linear_allocator_alloc(&app_state->systems_allocator,
                                                           app_state->logging_system_memory_requirements);
-  if (!initialize_logging(&app_state->logging_system_memory_requirements, app_state->logging_system_state)) {
+  if (!initialize_logging(&app_state->logging_system_memory_requirements,
+                          app_state->logging_system_state)) {
     KERROR("Logging system initialization failed. Shutting down the engine...");
     return false;
   }
@@ -228,6 +235,22 @@ b8 application_create(game *game_inst) {
                                  app_state->texture_system_state,
                                  texture_system_cfg)) {
     KFATAL("Texture system initialization failed. Shutting down the engine...");
+    return false;
+  }
+
+  // Initialize material system
+  material_system_config material_system_cfg = {
+    .max_material_count = MATERIAL_SYSTEM_MAX_COUNT
+  };
+  material_system_initialize(&app_state->material_system_memory_requirements,
+                             0,
+                             material_system_cfg);
+  app_state->material_system_state = linear_allocator_alloc(&app_state->systems_allocator,
+                                                           app_state->material_system_memory_requirements);
+  if (!material_system_initialize(&app_state->material_system_memory_requirements,
+                                  app_state->material_system_state,
+                                  material_system_cfg)) {
+    KFATAL("Material system initialization failed. Shutting down the engine...");
     return false;
   }
 
@@ -307,6 +330,7 @@ b8 application_run(void) {
   event_unregister(EVENT_CODE_RESIZED, 0, application_on_resized);
 
   input_system_shutdown(app_state->input_system_state);
+  material_system_shutdown(app_state->material_system_state);
   texture_system_shutdown(app_state->texture_system_state);
   renderer_system_shutdown(app_state->renderer_system_state);
   platform_system_shutdown(app_state->platform_system_state);

@@ -22,7 +22,9 @@
 #include <kmath.h>
 #include <logger.h>
 #include <kmemory.h>
+#include <kstring.h>
 #include <texture_system.h>
+#include <material_system.h>
 #include <renderer_backend.h>
 #include <renderer_frontend.h>
 
@@ -37,8 +39,8 @@ typedef struct {
   Matrix4 view;
   f32 near_clip;
   f32 far_clip;
-  // TEMPORARY texture to test things out
-  texture *test_diffuse;
+  // TEMPORARY material to test things out
+  material *test_material;
 } renderer_system_state;
 
 static renderer_system_state *state_ptr;
@@ -60,7 +62,12 @@ b8 event_on_debug(u16 code, void *sender, void *listener_inst, event_context dat
   ++choice;
   choice %= 3;
 
-  state_ptr->test_diffuse = texture_system_get(names[choice], true);
+  state_ptr->test_material->diffuse_map.texture = texture_system_get(names[choice],
+                                                                   true);
+  if (!state_ptr->test_material->diffuse_map.texture) {
+    KWARN("event_on_debug :: no texture detected (using fallback)");
+    state_ptr->test_material->diffuse_map.texture = texture_system_get_fallback();
+  }
   texture_system_release(old_name);
   return true;
 }
@@ -138,11 +145,25 @@ b8 renderer_draw_frame(render_packet *packet) {
     Quaternion rot = euler_to_quat(vec3_forward(), angle, false);
 
     Matrix4 model = quat_to_mat4_center(rot, vec3_zero());
-    if (!state_ptr->test_diffuse) state_ptr->test_diffuse = texture_system_get_fallback();
+
+    // Create a fallback material if it does not exist
+    if (!state_ptr->test_material) {
+      state_ptr->test_material = material_system_get("test_material");
+      if (!state_ptr->test_material) {
+        KWARN("renderer_draw_frame :: autoload material failed (falling back to manual)");
+        material_config cfg = {
+          .auto_release = false,
+          .diffuse_color = vec4_one()  // white
+        };
+        kstrncp(cfg.name, "test_material", MATERIAL_NAME_MAX_LEN);
+        kstrncp(cfg.diffuse_map_name, FALLBACK_TEXTURE_NAME, TEXTURE_NAME_MAX_LEN);
+        state_ptr->test_material = material_system_get_from_cfg(cfg);
+      }
+    }
+
     geometry_render_data data = {
-      .object_id = 0,
       .model = model,
-      .textures[0] = state_ptr->test_diffuse  // TEMPORARY texture
+      .material = state_ptr->test_material
     };
     state_ptr->backend.update_object(data);
 
@@ -159,22 +180,18 @@ void renderer_set_view(Matrix4 view) {
   state_ptr->view = view;
 }
 
-void renderer_create_texture(const char *name,
-                             i32 width,
-                             i32 height,
-                             i32 channel_count,
-                             const u8 *pixels,
-                             b8 has_transparency,
-                             texture *out_texture) {
-  state_ptr->backend.create_texture(name,
-                                    width,
-                                    height,
-                                    channel_count,
-                                    pixels,
-                                    has_transparency,
-                                    out_texture);
+void renderer_create_texture(const u8 *pixels, texture *texture) {
+  state_ptr->backend.create_texture(pixels, texture);
 }
 
 void renderer_destroy_texture(texture *texture) {
   state_ptr->backend.destroy_texture(texture);
+}
+
+b8 renderer_create_material(material *material) {
+  return state_ptr->backend.create_material(material);
+}
+
+void renderer_destroy_material(material *material) {
+  state_ptr->backend.destroy_material(material);
 }

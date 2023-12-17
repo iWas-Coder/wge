@@ -462,14 +462,6 @@ b8 vulkan_renderer_backend_initialize(renderer_backend *backend, const char *app
                     0,
                     sizeof(u32) * n_index,
                     index_list);
-
-  u32 object_id = 0;
-  if (!vulkan_material_shader_get_resources(&context,
-                                            &context.material_shader,
-                                            &object_id)) {
-    KERROR("Failed to get shader resources");
-    return false;
-  }
   // END OF TEMPORARY GEOMETRY TEST
 
   KINFO("Vulkan renderer initialized");
@@ -738,24 +730,11 @@ void vulkan_renderer_backend_update_object(geometry_render_data data) {
   // END OF TEMPORARY GEOMETRY TEST
 }
 
-void vulkan_renderer_backend_create_texture(const char *name,
-                                            i32 width,
-                                            i32 height,
-                                            i32 channel_count,
-                                            const u8 *pixels,
-                                            b8 has_transparency,
-                                            texture *out_texture) {
-  (void) name;          // Unused parameter
-
-  out_texture->width = width;
-  out_texture->height = height;
-  out_texture->channel_count = channel_count;
-  out_texture->generation = INVALID_ID;
-
+void vulkan_renderer_backend_create_texture(const u8 *pixels, texture *t) {
   // Internal data
-  out_texture->data = (vulkan_texture_data *) kallocate(sizeof(vulkan_texture_data), MEMORY_TAG_TEXTURE);
-  vulkan_texture_data *data = (vulkan_texture_data *) out_texture->data;
-  VkDeviceSize image_size = width * height * channel_count;
+  t->data = (vulkan_texture_data *) kallocate(sizeof(vulkan_texture_data), MEMORY_TAG_TEXTURE);
+  vulkan_texture_data *data = (vulkan_texture_data *) t->data;
+  VkDeviceSize image_size = t->width * t->height * t->channel_count;
   VkFormat image_format = VK_FORMAT_R8G8B8A8_UNORM;
 
   // Create buffer
@@ -778,8 +757,8 @@ void vulkan_renderer_backend_create_texture(const char *name,
   // Create image
   vulkan_image_create(&context,
                       VK_IMAGE_TYPE_2D,
-                      width,
-                      height,
+                      t->width,
+                      t->height,
                       image_format,
                       VK_IMAGE_TILING_OPTIMAL,
                       VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT,
@@ -844,8 +823,7 @@ void vulkan_renderer_backend_create_texture(const char *name,
     KERROR("Failed to create texture sampler: %s", vulkan_result_string(result, true));
     return;
   }
-  out_texture->has_transparency = has_transparency;
-  ++out_texture->generation;
+  ++t->generation;
 }
 
 void vulkan_renderer_backend_destroy_texture(texture *in_texture) {
@@ -862,4 +840,33 @@ void vulkan_renderer_backend_destroy_texture(texture *in_texture) {
     kfree(in_texture->data, sizeof(vulkan_texture_data), MEMORY_TAG_TEXTURE);
   }
   kzero_memory(in_texture, sizeof(texture));
+}
+
+b8 vulkan_renderer_backend_create_material(material *material) {
+  if (!material) {
+    KERROR("vulkan_renderer_backend_create_material :: `material` is required");
+    return false;
+  }
+  if (!vulkan_material_shader_get_resources(&context,
+                                            &context.material_shader,
+                                            material)) {
+    KERROR("vulkan_renderer_backend_create_material :: failed to get shader resources");
+    return false;
+  }
+  KTRACE("vulkan_renderer_backend_create_material :: material created successfully");
+  return true;
+}
+
+void vulkan_renderer_backend_destroy_material(material *material) {
+  if (!material) {
+    KWARN("vulkan_renderer_backend_destroy_material :: `material` is required (nothing was done)");
+    return;
+  }
+  if (material->internal_id == INVALID_ID) {
+    KWARN("vulkan_renderer_backend_destroy_material :: `internal_id` is invalid (nothing was done)");
+    return;
+  }
+  vulkan_material_shader_release_resources(&context,
+                                           &context.material_shader,
+                                           material);
 }

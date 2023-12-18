@@ -80,9 +80,6 @@ b8 create_fallback_textures(texture_system_state *state) {
     }
   }
 
-  kstrncp(state->fallback_texture.name,
-          FALLBACK_TEXTURE_NAME,
-          TEXTURE_NAME_MAX_LEN);
   state->fallback_texture = (texture) {
     .width = texture_size,
     .height = texture_size,
@@ -90,6 +87,9 @@ b8 create_fallback_textures(texture_system_state *state) {
     .generation = INVALID_ID,
     .has_transparency = false
   };
+  kstrncp(state->fallback_texture.name,
+          FALLBACK_TEXTURE_NAME,
+          TEXTURE_NAME_MAX_LEN);
 
   renderer_create_texture(pixels, &state->fallback_texture);
 

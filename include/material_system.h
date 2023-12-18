@@ -21,25 +21,30 @@
 
 #pragma once
 
-#include <renderer_types.h>
+#include <defines.h>
+#include <resource_types.h>
 
-b8 renderer_system_initialize(u64 *memory_requirements,
+#define FALLBACK_MATERIAL_NAME "fallback"
+
+typedef struct {
+  u32 max_material_count;
+} material_system_config;
+
+typedef struct {
+  char name[MATERIAL_NAME_MAX_LEN];
+  b8 auto_release;
+  Vector4 diffuse_color;
+  char diffuse_map_name[TEXTURE_NAME_MAX_LEN];
+} material_config;
+
+b8 material_system_initialize(u64 *memory_requirements,
                               void *state,
-                              const char *application_name);
+                              material_system_config config);
 
-void renderer_system_shutdown(void *state);
+void material_system_shutdown(void *state);
 
-void renderer_on_resized(u16 width, u16 height);
+material *material_system_get(const char *name);
 
-b8 renderer_draw_frame(render_packet *packet);
+material *material_system_get_from_cfg(material_config cfg);
 
-// This function should not have external visibility, but it does for now :D
-KAPI void renderer_set_view(Matrix4 view);
-
-void renderer_create_texture(const u8 *pixels, texture *texture);
-
-void renderer_destroy_texture(texture *texture);
-
-b8 renderer_create_material(material *material);
-
-void renderer_destroy_material(material *material);
+void material_system_release(const char *name);

@@ -45,12 +45,11 @@ typedef struct {
   Vector4 padding0;
   Vector4 padding1;
   Vector4 padding2;
-} local_uniform_object;
+} material_uniform_object;
 
 typedef struct {
-  u32 object_id;
   Matrix4 model;
-  texture *textures[GEOMETRY_RENDER_DATA_N_TEXTURES];
+  material *material;
 } geometry_render_data;
 
 typedef struct {
@@ -66,12 +65,8 @@ typedef struct renderer_backend {
   void (*update)(Matrix4 proj, Matrix4 view, Vector3 view_pos, Vector4 ambient_color, i32 mode);
   b8 (*end_frame)(struct renderer_backend *backend, f32 delta_time);
   void (*update_object)(geometry_render_data data);
-  void (*create_texture)(const char *name,
-                         i32 width,
-                         i32 height,
-                         i32 channel_count,
-                         const u8 *pixels,
-                         b8 has_transparency,
-                         texture *out_texture);
+  void (*create_texture)(const u8 *pixels, texture *texture);
   void (*destroy_texture)(texture *texture);
+  b8 (*create_material)(material *material);
+  void (*destroy_material)(material *material);
 } renderer_backend;

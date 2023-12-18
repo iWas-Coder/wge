@@ -47,6 +47,14 @@ typedef struct {
 
 static texture_system_state *state_ptr = 0;
 
+void destroy_texture(texture *t) {
+  renderer_destroy_texture(t);
+  kzero_memory(t->name, sizeof(char) * TEXTURE_NAME_MAX_LEN);
+  kzero_memory(t, sizeof(texture));
+  t->id = INVALID_ID;
+  t->generation = INVALID_ID;
+}
+
 b8 create_fallback_textures(texture_system_state *state) {
   // Fallback texture creation (256x256 blue+white checkerboard pattern)
   const i32 texture_size = 256;
@@ -71,13 +79,19 @@ b8 create_fallback_textures(texture_system_state *state) {
       }
     }
   }
-  renderer_create_texture(FALLBACK_TEXTURE_NAME,
-                          texture_size,
-                          texture_size,
-                          channels,
-                          pixels,
-                          false,
-                          &state->fallback_texture);
+
+  state->fallback_texture = (texture) {
+    .width = texture_size,
+    .height = texture_size,
+    .channel_count = channels,
+    .generation = INVALID_ID,
+    .has_transparency = false
+  };
+  kstrncp(state->fallback_texture.name,
+          FALLBACK_TEXTURE_NAME,
+          TEXTURE_NAME_MAX_LEN);
+
+  renderer_create_texture(pixels, &state->fallback_texture);
 
   state->fallback_texture.generation = INVALID_ID;
   KTRACE("Fallback texture created");
@@ -85,7 +99,7 @@ b8 create_fallback_textures(texture_system_state *state) {
 }
 
 void destroy_fallback_textures(texture_system_state *state) {
-  if (state) renderer_destroy_texture(&state->fallback_texture);
+  if (state) destroy_texture(&state->fallback_texture);
 }
 
 // TODO: move to resource system
@@ -106,9 +120,12 @@ b8 load_texture(const char *name, texture *t) {
   t_tmp.channel_count = required_channel_count;
 
   if (!data) {
-    if (stbi_failure_reason()) KWARN("load_texture :: failed to load file '%s': %s",
-                                     full_file_path,
-                                     stbi_failure_reason());
+    if (stbi_failure_reason()) {
+      KWARN("load_texture :: failed to load file '%s': %s",
+            full_file_path,
+            stbi_failure_reason());
+      stbi__err(0, 0);
+    }
     return false;
   }
 
@@ -122,18 +139,20 @@ b8 load_texture(const char *name, texture *t) {
       break;
     }
   }
-  if (stbi_failure_reason()) KWARN("load_texture :: failed to load file '%s': %s",
-                                   full_file_path,
-                                   stbi_failure_reason());
+  if (stbi_failure_reason()) {
+    KWARN("load_texture :: failed to load file '%s': %s",
+          full_file_path,
+          stbi_failure_reason());
+    stbi__err(0, 0);
+    return false;
+  }
+
+  kstrncp(t_tmp.name, name, TEXTURE_NAME_MAX_LEN);
+  t_tmp.generation = INVALID_ID;
+  t_tmp.has_transparency = has_transparency;
 
   // Create texture
-  renderer_create_texture(name,
-                          t_tmp.width,
-                          t_tmp.height,
-                          t_tmp.channel_count,
-                          data,
-                          has_transparency,
-                          &t_tmp);
+  renderer_create_texture(data, &t_tmp);
   texture old = *t;
   *t = t_tmp;
   renderer_destroy_texture(&old);
@@ -212,9 +231,8 @@ texture *texture_system_get(const char *name, b8 auto_release) {
   if (!ref.ref_count) ref.auto_release = auto_release;
   ++ref.ref_count;
   if (ref.handle == INVALID_ID) {
-    u32 count = state_ptr->config.max_texture_count;
     texture *t = 0;
-    for (u32 i = 0; i < count; ++i) {
+    for (u32 i = 0; i < state_ptr->config.max_texture_count; ++i) {
       if (state_ptr->registered_textures[i].id == INVALID_ID) {
         ref.handle = i;
         t = &state_ptr->registered_textures[i];
@@ -264,21 +282,22 @@ void texture_system_release(const char *name) {
     KWARN("Tried to release non-existant texture ('%s')", name);
     return;
   }
+
+  char name_cp[TEXTURE_NAME_MAX_LEN];
+  kstrncp(name_cp, name, TEXTURE_NAME_MAX_LEN);
+
   --ref.ref_count;
   if (!ref.ref_count && ref.auto_release) {
     texture *t = &state_ptr->registered_textures[ref.handle];
-    renderer_destroy_texture(t);
-    kzero_memory(t, sizeof(texture));
-    t->id = INVALID_ID;
-    t->generation = INVALID_ID;
+    destroy_texture(t);
     ref.handle = INVALID_ID;
     ref.auto_release = false;
-    KTRACE("Texture '%s' released (`ref_count` -> 0 && `auto_release` -> true)", name);
+    KTRACE("Texture '%s' released (`ref_count` -> 0 && `auto_release` -> true)", name_cp);
   }
   else KTRACE("Texture '%s' released (`ref_count` -> %i && `auto_release` -> %s)",
-              name,
+              name_cp,
               ref.ref_count,
               ref.auto_release ? "true" : "false");
   // Update entry
-  hash_table_set(&state_ptr->registered_texture_table, name, &ref);
+  hash_table_set(&state_ptr->registered_texture_table, name_cp, &ref);
 }

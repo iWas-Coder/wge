@@ -28,8 +28,9 @@
 
 #define MATERIAL_SHADER_STAGE_COUNT 2  // vertex and fragment shaders
 #define MATERIAL_SHADER_DESCRIPTOR_COUNT 8
-#define MATERIAL_SHADER_OBJECT_DESCRIPTOR_NUMBER 2
-#define MATERIAL_SHADER_MAX_OBJECTS 1024
+#define MATERIAL_SHADER_OBJECT_DESCRIPTOR_COUNT 2
+#define MATERIAL_SHADER_OBJECT_SAMPLER_COUNT 1
+#define MATERIAL_SHADER_MAX_MATERIALS 1024
 #define VK_CHECK(e) KASSERT(e == VK_SUCCESS)
 
 typedef struct {
@@ -151,8 +152,8 @@ typedef struct {
 
 typedef struct {
   VkDescriptorSet descriptor_sets[MATERIAL_SHADER_DESCRIPTOR_COUNT];
-  vulkan_descriptor_state descriptor_states[MATERIAL_SHADER_OBJECT_DESCRIPTOR_NUMBER];
-} vulkan_material_shader_object_state;
+  vulkan_descriptor_state descriptor_states[MATERIAL_SHADER_OBJECT_DESCRIPTOR_COUNT];
+} vulkan_material_shader_instance_state;
 
 typedef struct {
   vulkan_shader_stage stages[MATERIAL_SHADER_STAGE_COUNT];
@@ -167,7 +168,9 @@ typedef struct {
   vulkan_buffer object_uniform_buffer;
   // TODO: manage this with a free list
   u32 object_uniform_buffer_index;
-  vulkan_material_shader_object_state object_states[MATERIAL_SHADER_MAX_OBJECTS];
+  texture_use sampler_uses[MATERIAL_SHADER_OBJECT_SAMPLER_COUNT];
+  // TODO: make dynamic
+  vulkan_material_shader_instance_state instance_states[MATERIAL_SHADER_MAX_MATERIALS];
 } vulkan_material_shader;
 
 typedef struct {

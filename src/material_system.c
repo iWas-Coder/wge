@@ -247,6 +247,12 @@ material *material_system_get(const char *name) {
   return material_system_get_from_cfg(cfg);
 }
 
+material *material_system_get_fallback(void) {
+  if (state_ptr) return &state_ptr->fallback_material;
+  KFATAL("material_system_get_fallback :: called before material system init");
+  return 0;
+}
+
 material *material_system_get_from_cfg(material_config cfg) {
   if (kstrcmpi(cfg.name, FALLBACK_MATERIAL_NAME)) return &state_ptr->fallback_material;
 

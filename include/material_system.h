@@ -45,6 +45,8 @@ void material_system_shutdown(void *state);
 
 material *material_system_get(const char *name);
 
+material *material_system_get_fallback(void);
+
 material *material_system_get_from_cfg(material_config cfg);
 
 void material_system_release(const char *name);

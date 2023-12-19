@@ -119,6 +119,11 @@ i32 kstridx(char *str, char c) {
   return -1;
 }
 
+char *kstrrm(char *str) {
+  if (str) str[0] = 0;
+  return str;
+}
+
 b8 str_to_vec4(char *str, Vector4 *v) {
   if (!str) return false;
   kzero_memory(v, sizeof(Vector4));

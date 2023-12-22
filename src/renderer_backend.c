@@ -32,7 +32,9 @@ b8 renderer_backend_create(renderer_backend_type type,
     out_renderer_backend->begin_frame      = vulkan_renderer_backend_begin_frame;
     out_renderer_backend->update           = vulkan_renderer_backend_update;
     out_renderer_backend->end_frame        = vulkan_renderer_backend_end_frame;
-    out_renderer_backend->update_object    = vulkan_renderer_backend_update_object;
+    out_renderer_backend->draw_geometry    = vulkan_renderer_backend_draw_geometry;
+    out_renderer_backend->create_geometry  = vulkan_renderer_backend_create_geometry;
+    out_renderer_backend->destroy_geometry  = vulkan_renderer_backend_destroy_geometry;
     out_renderer_backend->create_texture   = vulkan_renderer_backend_create_texture;
     out_renderer_backend->destroy_texture  = vulkan_renderer_backend_destroy_texture;
     out_renderer_backend->create_material  = vulkan_renderer_backend_create_material;
@@ -55,7 +57,9 @@ void renderer_backend_destroy(renderer_backend *renderer_backend) {
   renderer_backend->begin_frame      = 0;
   renderer_backend->update           = 0;
   renderer_backend->end_frame        = 0;
-  renderer_backend->update_object    = 0;
+  renderer_backend->draw_geometry    = 0;
+  renderer_backend->create_geometry  = 0;
+  renderer_backend->destroy_geometry = 0;
   renderer_backend->create_texture   = 0;
   renderer_backend->destroy_texture  = 0;
   renderer_backend->create_material  = 0;

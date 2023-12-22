@@ -330,21 +330,28 @@ void vulkan_material_shader_update(vulkan_context *context,
                           0);
 }
 
-void vulkan_material_shader_update_object(vulkan_context *context,
-                                          vulkan_material_shader *shader,
-                                          geometry_render_data data) {
-  u32 image_idx = context->image_index;
-  VkCommandBuffer command_buffer = context->graphics_command_buffers[image_idx].handle;
-
-  vkCmdPushConstants(command_buffer,
+void vulkan_material_shader_set_model(vulkan_context *context,
+                                      vulkan_material_shader *shader,
+                                      Matrix4 model) {
+  if (!context || !shader) return;
+  vkCmdPushConstants(context->graphics_command_buffers[context->image_index].handle,
                      shader->pipeline.pipeline_layout,
                      VK_SHADER_STAGE_VERTEX_BIT,
                      0,
                      sizeof(Matrix4),
-                     &data.model);
+                     &model);
+}
+
+void vulkan_material_shader_apply_material(vulkan_context *context,
+                                           vulkan_material_shader *shader,
+                                           material *material) {
+  if (!context || !shader) return;
+  
+  u32 image_idx = context->image_index;
+  VkCommandBuffer command_buffer = context->graphics_command_buffers[image_idx].handle;
 
   // Get material data
-  vulkan_material_shader_instance_state *object_state = &shader->instance_states[data.material->internal_id];
+  vulkan_material_shader_instance_state *object_state = &shader->instance_states[material->internal_id];
   VkDescriptorSet object_descriptor_set = object_state->descriptor_sets[image_idx];
 
   VkWriteDescriptorSet descriptor_writes[MATERIAL_SHADER_OBJECT_DESCRIPTOR_COUNT];
@@ -354,7 +361,7 @@ void vulkan_material_shader_update_object(vulkan_context *context,
 
   // Descriptor 0: uniform buffer
   u32 range = sizeof(material_uniform_object);
-  u64 offset = sizeof(material_uniform_object) * data.material->internal_id;
+  u64 offset = sizeof(material_uniform_object) * material->internal_id;
   material_uniform_object obo;
 
   // OLD: change diffuse_color with a sin() wave (black -> white -> black -> ...)
@@ -365,7 +372,7 @@ void vulkan_material_shader_update_object(vulkan_context *context,
     obo.diffuse_color = vec4_create(s, s, s, 1.0f);
   */
   // Set OBO diffuse color from the material
-  obo.diffuse_color = data.material->diffuse_color;
+  obo.diffuse_color = material->diffuse_color;
 
   vulkan_buffer_load(context,
                      &shader->object_uniform_buffer,
@@ -377,7 +384,7 @@ void vulkan_material_shader_update_object(vulkan_context *context,
   // If the descriptor has not been updated yet
   u32 *global_ubo_generation = &object_state->descriptor_states[descriptor_idx].generations[image_idx];
   if (*global_ubo_generation == INVALID_ID ||
-      *global_ubo_generation != data.material->generation) {
+      *global_ubo_generation != material->generation) {
     VkDescriptorBufferInfo buffer_info = {
       .buffer = shader->object_uniform_buffer.handle,
       .offset = offset,
@@ -392,7 +399,7 @@ void vulkan_material_shader_update_object(vulkan_context *context,
       .pBufferInfo = &buffer_info
     };
     ++descriptor_count;
-    *global_ubo_generation = data.material->generation;
+    *global_ubo_generation = material->generation;
   }
   ++descriptor_idx;
 
@@ -404,7 +411,7 @@ void vulkan_material_shader_update_object(vulkan_context *context,
     texture *t = 0;
     switch (t_use) {
     case TEXTURE_USE_MAP_DIFFUSE:
-      t = data.material->diffuse_map.texture;
+      t = material->diffuse_map.texture;
       break;
     default:
       KFATAL("vulkan_material_shader_update_object :: unable to bind sampler to unknown `texture_use`");
@@ -502,6 +509,9 @@ void vulkan_material_shader_release_resources(vulkan_context *context,
                                               material *material) {
   vulkan_material_shader_instance_state *instance_state = &shader->instance_states[material->internal_id];
 
+  // Wait for any pending ops using the DescriptorSet to finish
+  vkDeviceWaitIdle(context->device.logical_device);
+  
   VkResult result = vkFreeDescriptorSets(context->device.logical_device,
                                          shader->object_descriptor_pool,
                                          MATERIAL_SHADER_DESCRIPTOR_COUNT,

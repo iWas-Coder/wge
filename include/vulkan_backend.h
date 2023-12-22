@@ -40,7 +40,15 @@ void vulkan_renderer_backend_update(Matrix4 proj,
 
 b8 vulkan_renderer_backend_end_frame(renderer_backend *backend, f32 delta_time);
 
-void vulkan_renderer_backend_update_object(geometry_render_data data);
+void vulkan_renderer_backend_draw_geometry(geometry_render_data data);
+
+b8 vulkan_renderer_backend_create_geometry(geometry *geometry,
+                                           u32 vertex_count,
+                                           const vertex_3d *vertices,
+                                           u32 index_count,
+                                           const u32 *indices);
+
+void vulkan_renderer_backend_destroy_geometry(geometry *geometry);
 
 void vulkan_renderer_backend_create_texture(const u8 *pixels, texture *t);
 

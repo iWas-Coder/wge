@@ -22,22 +22,25 @@
 #include <event.h>
 #include <input.h>
 #include <clock.h>
+#include <kmath.h>
 #include <logger.h>
 #include <asserts.h>
 #include <kmemory.h>
+#include <kstring.h>
 #include <platform.h>
 #include <game_types.h>
 #include <application.h>
 #include <texture_system.h>
 #include <material_system.h>
+#include <geometry_system.h>
 #include <linear_allocator.h>
 #include <renderer_frontend.h>
 
 #define FRAMERATE 60
-#define TIME_MS_IN_S 1e3
 #define SYSTEMS_ALLOCATOR_SIZE 64 * 1024 * 1024  // 64MB
 #define TEXTURE_SYSTEM_MAX_COUNT 65536
 #define MATERIAL_SYSTEM_MAX_COUNT 4096
+#define GEOMETRY_SYSTEM_MAX_COUNT 4096
 
 typedef struct {
   game *game_inst;
@@ -64,6 +67,10 @@ typedef struct {
   void *texture_system_state;
   u64 material_system_memory_requirements;
   void *material_system_state;
+  u64 geometry_system_memory_requirements;
+  void *geometry_system_state;
+  // TEMPORARY: to test things out
+  geometry *test_geometry;
 } application_state;
 
 static application_state *app_state;
@@ -140,6 +147,38 @@ b8 application_on_resized(u16 code, void *sender, void *listener_inst, event_con
   return false;
 }
 
+// TEMPORARY function to handle event which swaps the texture while app is running
+b8 event_on_debug(u16 code, void *sender, void *listener_inst, event_context data) {
+  (void) code;           // Unused parameter
+  (void) sender;         // Unused parameter
+  (void) listener_inst;  // Unused parameter
+  (void) data;           // Unused parameter
+
+  const char *names[] = {
+    "cobblestone",
+    "KEKL",
+    "KEKW",
+    "paving",
+    "paving2"
+  };
+  static u8 choice = 2;
+  const char *old_name = names[choice];
+  ++choice;
+  choice %= 5;
+
+  if (app_state->test_geometry) {
+    app_state->test_geometry->material->diffuse_map.texture = texture_system_get(names[choice],
+                                                                              true);
+    if (!app_state->test_geometry->material->diffuse_map.texture) {
+      KWARN("event_on_debug :: no texture detected (using fallback)");
+      app_state->test_geometry->material->diffuse_map.texture = texture_system_get_fallback();
+    }
+  }
+  texture_system_release(old_name);
+
+  return true;
+}
+
 b8 application_create(game *game_inst) {
   if (game_inst->app_state) {
     KERROR("Tried to create the application multiple times");
@@ -190,6 +229,7 @@ b8 application_create(game *game_inst) {
   event_register(EVENT_CODE_KEY_PRESSED, 0, application_on_key);
   event_register(EVENT_CODE_KEY_RELEASED, 0, application_on_key);
   event_register(EVENT_CODE_RESIZED, 0, application_on_resized);
+  event_register(EVENT_CODE_DEBUG0, 0, event_on_debug);  // tmp
 
   // Initialize platform system
   platform_system_startup(&app_state->platform_system_memory_requirements,
@@ -254,6 +294,41 @@ b8 application_create(game *game_inst) {
     return false;
   }
 
+  // Initialize geometry system
+  geometry_system_config geometry_system_cfg = {
+    .max_geometry_count = GEOMETRY_SYSTEM_MAX_COUNT
+  };
+  geometry_system_initialize(&app_state->geometry_system_memory_requirements,
+                             0,
+                             geometry_system_cfg);
+  app_state->geometry_system_state = linear_allocator_alloc(&app_state->systems_allocator,
+                                                           app_state->geometry_system_memory_requirements);
+  if (!geometry_system_initialize(&app_state->geometry_system_memory_requirements,
+                                  app_state->geometry_system_state,
+                                  geometry_system_cfg)) {
+    KFATAL("Geometry system initialization failed. Shutting down the engine...");
+    return false;
+  }
+
+  // TEMPORARY START: geometry test
+  geometry_config geo_cfg = geometry_system_gen_plane_cfg(10.0f,
+                                                          5.0f,
+                                                          5,
+                                                          5,
+                                                          5.0f,
+                                                          2.0f,
+                                                          "test_geo_plane",
+                                                          "test_material");
+  app_state->test_geometry = geometry_system_get_from_cfg(geo_cfg, true);
+  // app_state->test_geometry = geometry_system_get_fallback();
+  kfree(geo_cfg.vertices,
+        sizeof(vertex_3d) * geo_cfg.vertex_count,
+        MEMORY_TAG_ARRAY);
+  kfree(geo_cfg.indices,
+        sizeof(u32) * geo_cfg.index_count,
+        MEMORY_TAG_ARRAY);
+  // TEMPORARY END: geometry test
+  
   // Game initialization
   if (!app_state->game_inst->initialize(app_state->game_inst)) {
     KFATAL("Game initialization failed. Shutting down the engine...");
@@ -298,6 +373,16 @@ b8 application_run(void) {
 
       render_packet packet;
       packet.delta_time = delta;
+
+      // TEMPORARY START: geometry test
+      geometry_render_data test_render = {
+        .geometry = app_state->test_geometry,
+        .model = mat4_id()
+      };
+      packet.geometry_count = 1;
+      packet.geometries = &test_render;
+      // TEMPORARY END: geometry test
+      
       renderer_draw_frame(&packet);
 
       f64 frame_end_time = platform_get_absolute_time();
@@ -328,8 +413,10 @@ b8 application_run(void) {
   event_unregister(EVENT_CODE_KEY_PRESSED, 0, application_on_key);
   event_unregister(EVENT_CODE_KEY_RELEASED, 0, application_on_key);
   event_unregister(EVENT_CODE_RESIZED, 0, application_on_resized);
+  event_unregister(EVENT_CODE_DEBUG0, 0, event_on_debug);  // tmp
 
   input_system_shutdown(app_state->input_system_state);
+  geometry_system_shutdown(app_state->geometry_system_state);
   material_system_shutdown(app_state->material_system_state);
   texture_system_shutdown(app_state->texture_system_state);
   renderer_system_shutdown(app_state->renderer_system_state);

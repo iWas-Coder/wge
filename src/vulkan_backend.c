@@ -33,6 +33,7 @@
 #include <vulkan_buffer.h>
 #include <vulkan_backend.h>
 #include <vulkan_platform.h>
+#include <material_system.h>
 #include <vulkan_swapchain.h>
 #include <vulkan_renderpass.h>
 #include <vulkan_framebuffer.h>
@@ -216,7 +217,7 @@ void upload_data_range(vulkan_context *context,
                        vulkan_buffer *buffer,
                        u64 offset,
                        u64 size,
-                       void *data) {
+                       const void *data) {
   VkBufferUsageFlags flags = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
   vulkan_buffer tmp_buf;
   // Create temporal buffer
@@ -240,6 +241,14 @@ void upload_data_range(vulkan_context *context,
                      size);
   // Destroy temporal buffer
   vulkan_buffer_destroy(context, &tmp_buf);
+}
+
+void free_data_range(vulkan_buffer *buffer, u64 offset, u64 size) {
+  (void) buffer;  // Unused parameter
+  (void) offset;  // Unused parameter
+  (void) size;    // Unused parameter
+  
+  // TODO: implement this with a free list
 }
 
 b8 vulkan_renderer_backend_initialize(renderer_backend *backend, const char *application_name) {
@@ -415,54 +424,8 @@ b8 vulkan_renderer_backend_initialize(renderer_backend *backend, const char *app
   // Create vertex and index buffers
   create_buffers(&context);
 
-  // START OF TEMPORARY GEOMETRY TEST
-  const u32 n_vertex = 4;
-  const u32 n_index = 6;
-  const f32 factor = 10.0f;
-  vertex_3d vertex_list[] = {
-    {
-      .position.x = -0.5f * factor,
-      .position.y = -0.5f * factor,
-      .texcoord.x = 0.0f,
-      .texcoord.y = 0.0f
-    },
-    {
-      .position.x = 0.5f * factor,
-      .position.y = 0.5f * factor,
-      .texcoord.x = 1.0f,
-      .texcoord.y = 1.0f
-    },
-    {
-      .position.x = -0.5f * factor,
-      .position.y = 0.5f * factor,
-      .texcoord.x = 0.0f,
-      .texcoord.y = 1.0f
-    },
-    {
-      .position.x = 0.5f * factor,
-      .position.y = -0.5f * factor,
-      .texcoord.x = 1.0f,
-      .texcoord.y = 0.0f
-    }};
-
-  u32 index_list[] = {0, 1, 2, 0, 3, 1};
-  upload_data_range(&context,
-                    context.device.graphics_command_pool,
-                    0,
-                    context.device.graphics_queue,
-                    &context.object_vertex_buffer,
-                    0,
-                    sizeof(vertex_3d) * n_vertex,
-                    vertex_list);
-  upload_data_range(&context,
-                    context.device.graphics_command_pool,
-                    0,
-                    context.device.graphics_queue,
-                    &context.object_index_buffer,
-                    0,
-                    sizeof(u32) * n_index,
-                    index_list);
-  // END OF TEMPORARY GEOMETRY TEST
+  // Mark all geometries as invalid
+  for (u32 i = 0; i < GEOMETRY_MAX_COUNT; ++i) context.geometries[i].id = INVALID_ID;
 
   KINFO("Vulkan renderer initialized");
   return true;
@@ -705,29 +668,156 @@ b8 vulkan_renderer_backend_end_frame(renderer_backend *backend, f32 delta_time) 
   return true;
 }
 
-void vulkan_renderer_backend_update_object(geometry_render_data data) {
-  vulkan_command_buffer *command_buffer = &context.graphics_command_buffers[context.image_index];
-  vulkan_material_shader_update_object(&context, &context.material_shader, data);
+void vulkan_renderer_backend_draw_geometry(geometry_render_data data) {
+  if (data.geometry && data.geometry->internal_id == INVALID_ID) return;
 
-  // START OF TEMPORARY GEOMETRY TEST
+  vulkan_geometry_data *buf_data = &context.geometries[data.geometry->internal_id];
+  vulkan_command_buffer *command_buffer = &context.graphics_command_buffers[context.image_index];
+
   vulkan_material_shader_use(&context, &context.material_shader);
-  VkDeviceSize offsets[] = {0};
+  vulkan_material_shader_set_model(&context,
+                                   &context.material_shader,
+                                   data.model);
+  material *m = 0;
+  if (data.geometry->material) m = data.geometry->material;
+  else m = material_system_get_fallback();
+  vulkan_material_shader_apply_material(&context,
+                                        &context.material_shader,
+                                        m);
+
+  // Bind vertex buffer
+  VkDeviceSize offsets[] = { buf_data->vertex_buffer_offset };
   vkCmdBindVertexBuffers(command_buffer->handle,
                          0,
                          1,
                          &context.object_vertex_buffer.handle,
                          offsets);
-  vkCmdBindIndexBuffer(command_buffer->handle,
-                       context.object_index_buffer.handle,
-                       0,
-                       VK_INDEX_TYPE_UINT32);
-  vkCmdDrawIndexed(command_buffer->handle,
-                   6,
-                   1,
-                   0,
-                   0,
-                   0);
-  // END OF TEMPORARY GEOMETRY TEST
+  if (buf_data->index_count) {
+    // Bind index buffer
+    vkCmdBindIndexBuffer(command_buffer->handle,
+                         context.object_index_buffer.handle,
+                         buf_data->index_buffer_offset,
+                         VK_INDEX_TYPE_UINT32);
+    // Draw indexed data
+    vkCmdDrawIndexed(command_buffer->handle,
+                     buf_data->index_count,
+                     1,
+                     0,
+                     0,
+                     0);
+  }
+  // Draw non-indexed data
+  else vkCmdDraw(command_buffer->handle,
+                 buf_data->vertex_count,
+                 1,
+                 0,
+                 0);
+}
+
+b8 vulkan_renderer_backend_create_geometry(geometry *geometry,
+                                           u32 vertex_count,
+                                           const vertex_3d *vertices,
+                                           u32 index_count,
+                                           const u32 *indices) {
+  if (!vertex_count || !vertices) {
+    KERROR("vulkan_renderer_backend_create_geometry :: vertex data is required");
+    return false;
+  }
+
+  b8 is_reupload = geometry->internal_id != INVALID_ID;
+  vulkan_geometry_data *internal_data = 0;
+  vulkan_geometry_data old_range;
+  if (is_reupload) {
+    internal_data = &context.geometries[geometry->internal_id];
+    old_range = (vulkan_geometry_data) {
+      .index_buffer_offset = internal_data->index_buffer_offset,
+      .index_count = internal_data->index_count,
+      .index_size = internal_data->index_size,
+      .vertex_buffer_offset = internal_data->vertex_buffer_offset,
+      .vertex_count = internal_data->vertex_count,
+      .vertex_size = internal_data->vertex_size
+    };
+  }
+  else {
+    for (u32 i = 0; i < GEOMETRY_MAX_COUNT; ++i) {
+      if (context.geometries[i].id != INVALID_ID) continue;
+      geometry->internal_id = i;
+      context.geometries[i].id = i;
+      internal_data = &context.geometries[i];
+      break;
+    }
+  }
+
+  if (!internal_data) {
+    KFATAL("vulkan_renderer_backend_create_geometry :: geometry system is full (adjust config to allow more geometries)");
+    return false;
+  }
+
+  VkCommandPool pool = context.device.graphics_command_pool;
+  VkQueue queue = context.device.graphics_queue;
+
+  // Vertex data
+  internal_data->vertex_buffer_offset = context.geometry_vertex_offset;
+  internal_data->vertex_count = vertex_count;
+  internal_data->vertex_size = sizeof(vertex_3d) * vertex_count;
+  upload_data_range(&context,
+                    pool,
+                    0,
+                    queue,
+                    &context.object_vertex_buffer,
+                    internal_data->vertex_buffer_offset,
+                    internal_data->vertex_size,
+                    vertices);
+  context.geometry_vertex_offset += internal_data->vertex_size;
+
+  // Index data
+  if (index_count && indices) {
+    internal_data->index_buffer_offset = context.geometry_index_offset;
+    internal_data->index_count = index_count;
+    internal_data->index_size = sizeof(u32) * index_count;
+    upload_data_range(&context,
+                      pool,
+                      0,
+                      queue,
+                      &context.object_index_buffer,
+                      internal_data->index_buffer_offset,
+                      internal_data->index_size,
+                      indices);
+    context.geometry_index_offset += internal_data->index_size;
+  }
+
+  if (internal_data->generation == INVALID_ID) internal_data->generation = 0;
+  else ++internal_data->generation;
+
+  if (is_reupload) {
+    free_data_range(&context.object_vertex_buffer,
+                    old_range.vertex_buffer_offset,
+                    old_range.vertex_size);
+    if (old_range.index_size) free_data_range(&context.object_index_buffer,
+                                              old_range.index_buffer_offset,
+                                              old_range.index_size);
+  }
+
+  return true;
+}
+
+void vulkan_renderer_backend_destroy_geometry(geometry *geometry) {
+  if (!geometry || geometry->internal_id == INVALID_ID) return;
+  vkDeviceWaitIdle(context.device.logical_device);
+  vulkan_geometry_data *internal_data = &context.geometries[geometry->internal_id];
+
+  // Vertex data
+  free_data_range(&context.object_vertex_buffer,
+                  internal_data->vertex_buffer_offset,
+                  internal_data->vertex_size);
+  // Index data
+  if (internal_data->index_size) free_data_range(&context.object_index_buffer,
+                                                internal_data->index_buffer_offset,
+                                                internal_data->index_size);
+
+  kzero_memory(internal_data, sizeof(vulkan_geometry_data));
+  internal_data->id = INVALID_ID;
+  internal_data->generation = INVALID_ID;
 }
 
 void vulkan_renderer_backend_create_texture(const u8 *pixels, texture *t) {

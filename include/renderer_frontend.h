@@ -43,3 +43,11 @@ void renderer_destroy_texture(texture *texture);
 b8 renderer_create_material(material *material);
 
 void renderer_destroy_material(material *material);
+
+b8 renderer_create_geometry(geometry *geometry,
+                            u32 vertex_count,
+                            const vertex_3d *vertices,
+                            u32 index_count,
+                            const u32 *indices);
+
+void renderer_destroy_geometry(geometry *geometry);

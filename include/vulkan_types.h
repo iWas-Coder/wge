@@ -31,6 +31,7 @@
 #define MATERIAL_SHADER_OBJECT_DESCRIPTOR_COUNT 2
 #define MATERIAL_SHADER_OBJECT_SAMPLER_COUNT 1
 #define MATERIAL_SHADER_MAX_MATERIALS 1024
+#define GEOMETRY_MAX_COUNT 4096
 #define VK_CHECK(e) KASSERT(e == VK_SUCCESS)
 
 typedef struct {
@@ -156,6 +157,17 @@ typedef struct {
 } vulkan_material_shader_instance_state;
 
 typedef struct {
+  u32 id;
+  u32 generation;
+  u32 vertex_count;
+  u32 vertex_size;
+  u32 vertex_buffer_offset;
+  u32 index_count;
+  u32 index_size;
+  u32 index_buffer_offset;
+} vulkan_geometry_data;
+
+typedef struct {
   vulkan_shader_stage stages[MATERIAL_SHADER_STAGE_COUNT];
   vulkan_pipeline pipeline;
   VkDescriptorPool global_descriptor_pool;
@@ -201,8 +213,9 @@ typedef struct {
   vulkan_material_shader material_shader;
   u64 geometry_vertex_offset;
   u64 geometry_index_offset;
-  i32 (*find_memory_index)(u32 type_filter, u32 property_flags);
   f32 frame_delta_time;
+  vulkan_geometry_data geometries[GEOMETRY_MAX_COUNT];
+  i32 (*find_memory_index)(u32 type_filter, u32 property_flags);
 } vulkan_context;
 
 typedef struct {

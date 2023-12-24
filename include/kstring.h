@@ -48,6 +48,8 @@ KAPI void kstrsub(char *dest, const char *src, u64 start, u64 len);
 
 KAPI i32 kstridx(char *str, char c);
 
+KAPI char *kstrrm(char *str);
+
 KAPI b8 str_to_vec4(char *str, Vector4 *v);
 
 KAPI b8 str_to_vec3(char *str, Vector3 *v);

@@ -25,6 +25,7 @@
 
 #define TEXTURE_NAME_MAX_LEN 92  // should be [256, 512], but it SIGSEGV's
 #define MATERIAL_NAME_MAX_LEN 256
+#define GEOMETRY_NAME_MAX_LEN 256
 
 typedef struct {
   u32 id;
@@ -55,3 +56,11 @@ typedef struct {
   Vector4 diffuse_color;
   texture_map diffuse_map;
 } material;
+
+typedef struct {
+  u32 id;
+  u32 generation;
+  u32 internal_id;
+  char name[GEOMETRY_NAME_MAX_LEN];
+  material *material;
+} geometry;

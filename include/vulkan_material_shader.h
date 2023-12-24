@@ -34,9 +34,13 @@ void vulkan_material_shader_update(vulkan_context *context,
                                    vulkan_material_shader *shader,
                                    f32 delta_time);
 
-void vulkan_material_shader_update_object(vulkan_context *context,
-                                          vulkan_material_shader *shader,
-                                          geometry_render_data data);
+void vulkan_material_shader_set_model(vulkan_context *context,
+                                      vulkan_material_shader *shader,
+                                      Matrix4 model);
+
+void vulkan_material_shader_apply_material(vulkan_context *context,
+                                           vulkan_material_shader *shader,
+                                           material *material);
 
 b8 vulkan_material_shader_get_resources(vulkan_context *context,
                                         vulkan_material_shader *shader,

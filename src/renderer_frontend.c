@@ -28,9 +28,6 @@
 #include <renderer_backend.h>
 #include <renderer_frontend.h>
 
-// TEMPORARY include
-#include <event.h>
-
 #define PROJ_MATRIX_ASPECT_RATIO (16 / 9.0f)
 
 typedef struct {
@@ -39,38 +36,9 @@ typedef struct {
   Matrix4 view;
   f32 near_clip;
   f32 far_clip;
-  // TEMPORARY material to test things out
-  material *test_material;
 } renderer_system_state;
 
 static renderer_system_state *state_ptr;
-
-// TEMPORARY function to handle event which swaps the texture while app is running
-b8 event_on_debug(u16 code, void *sender, void *listener_inst, event_context data) {
-  (void) code;           // Unused parameter
-  (void) sender;         // Unused parameter
-  (void) listener_inst;  // Unused parameter
-  (void) data;           // Unused parameter
-
-  const char *names[] = {
-    "cobblestone",
-    "paving",
-    "paving2"
-  };
-  static u8 choice = 2;
-  const char *old_name = names[choice];
-  ++choice;
-  choice %= 3;
-
-  state_ptr->test_material->diffuse_map.texture = texture_system_get(names[choice],
-                                                                   true);
-  if (!state_ptr->test_material->diffuse_map.texture) {
-    KWARN("event_on_debug :: no texture detected (using fallback)");
-    state_ptr->test_material->diffuse_map.texture = texture_system_get_fallback();
-  }
-  texture_system_release(old_name);
-  return true;
-}
 
 b8 renderer_system_initialize(u64 *memory_requirements,
                               void *state,
@@ -79,10 +47,8 @@ b8 renderer_system_initialize(u64 *memory_requirements,
   if (!state) return true;
   state_ptr = state;
 
-  // TEMPORARY register for the debug event to swap textures
-  event_register(EVENT_CODE_DEBUG0, state_ptr, event_on_debug);
-
-  renderer_backend_create(RENDERER_BACKEND_TYPE_VULKAN, &state_ptr->backend);
+  renderer_backend_create(RENDERER_BACKEND_TYPE_VULKAN,
+                          &state_ptr->backend);
   state_ptr->backend.frame_number = 0;
 
   if (!state_ptr->backend.initialize(&state_ptr->backend, application_name)) {
@@ -105,9 +71,6 @@ void renderer_system_shutdown(void *state) {
   (void) state;  // Unused parameter
 
   if (!state_ptr) return;
-  // TEMPORARY unregister for the debug event to swap textures
-  event_unregister(EVENT_CODE_DEBUG0, state_ptr, event_on_debug);
-
   state_ptr->backend.shutdown(&state_ptr->backend);
   state_ptr = 0;
 }
@@ -115,9 +78,9 @@ void renderer_system_shutdown(void *state) {
 void renderer_on_resized(u16 width, u16 height) {
   if (state_ptr) {
     state_ptr->proj = mat4_persp_proj(deg_to_rad(45.0f),
-                                      (f32) width / height,
-                                      state_ptr->near_clip,
-                                      state_ptr->far_clip);
+                                     (f32) width / height,
+                                     state_ptr->near_clip,
+                                     state_ptr->far_clip);
     state_ptr->backend.resized(&state_ptr->backend, width, height);
   }
   else KWARN("renderer_on_resized :: Renderer backend does not exist");
@@ -139,33 +102,9 @@ b8 renderer_draw_frame(render_packet *packet) {
   if (renderer_begin_frame(packet->delta_time)) {
     state_ptr->backend.update(state_ptr->proj, state_ptr->view, vec3_zero(), vec4_one(), 0);
 
-    // Object rotation per frame
-    static f32 angle = 0.01f;
-    angle += 0.0001f;
-    Quaternion rot = euler_to_quat(vec3_forward(), angle, false);
-
-    Matrix4 model = quat_to_mat4_center(rot, vec3_zero());
-
-    // Create a fallback material if it does not exist
-    if (!state_ptr->test_material) {
-      state_ptr->test_material = material_system_get("test_material");
-      if (!state_ptr->test_material) {
-        KWARN("renderer_draw_frame :: autoload material failed (falling back to manual)");
-        material_config cfg = {
-          .auto_release = false,
-          .diffuse_color = vec4_one()  // white
-        };
-        kstrncp(cfg.name, "test_material", MATERIAL_NAME_MAX_LEN);
-        kstrncp(cfg.diffuse_map_name, FALLBACK_TEXTURE_NAME, TEXTURE_NAME_MAX_LEN);
-        state_ptr->test_material = material_system_get_from_cfg(cfg);
-      }
+    for (u32 i = 0; i < packet->geometry_count; ++i) {
+      state_ptr->backend.draw_geometry(packet->geometries[i]);
     }
-
-    geometry_render_data data = {
-      .model = model,
-      .material = state_ptr->test_material
-    };
-    state_ptr->backend.update_object(data);
 
     b8 result = renderer_end_frame(packet->delta_time);
     if (!result) {
@@ -194,4 +133,20 @@ b8 renderer_create_material(material *material) {
 
 void renderer_destroy_material(material *material) {
   state_ptr->backend.destroy_material(material);
+}
+
+b8 renderer_create_geometry(geometry *geometry,
+                            u32 vertex_count,
+                            const vertex_3d *vertices,
+                            u32 index_count,
+                            const u32 *indices) {
+  return state_ptr->backend.create_geometry(geometry,
+                                           vertex_count,
+                                           vertices,
+                                           index_count,
+                                           indices);
+}
+
+void renderer_destroy_geometry(geometry *geometry) {
+  state_ptr->backend.destroy_geometry(geometry);
 }

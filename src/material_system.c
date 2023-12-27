@@ -25,16 +25,8 @@
 #include <hash_table.h>
 #include <texture_system.h>
 #include <material_system.h>
+#include <resource_system.h>
 #include <renderer_frontend.h>
-
-// TODO: move to resource system
-#include <filesystem.h>
-
-#define FILE_PATH_SIZE 512
-#define MATERIAL_FILE_LINE_MAX_SIZE 512
-#define MATERIAL_FILE_VAR_MAX_SIZE 64
-#define MATERIAL_FILE_VALUE_MAX_SIZE (MATERIAL_FILE_LINE_MAX_SIZE - MATERIAL_FILE_VAR_MAX_SIZE - 2)
-#define MATERIAL_FILE_EXTENSION_NAME "wmt"
 
 typedef struct {
   material_system_config config;
@@ -108,76 +100,6 @@ b8 load_material(material_config cfg, material *m) {
   return true;
 }
 
-b8 load_cfg_file(const char *path, material_config *out_cfg) {
-  file_handle fd;
-  if (!filesystem_open(path, FILE_MODE_READ, false, &fd)) {
-    KERROR("load_cfg_file :: unable to open material file for reading ('%s')", path);
-    return false;
-  }
-
-  char line_buf[MATERIAL_FILE_LINE_MAX_SIZE];
-  char *p = &line_buf[0];
-  u64 line_len = 0;
-  u32 line_num = 1;
-  while (filesystem_read_line(&fd,
-                              MATERIAL_FILE_LINE_MAX_SIZE - 1,
-                              &p,
-                              &line_len)) {
-    char *trimmed = kstrtr(line_buf);
-    line_len = kstrlen(trimmed);
-    // Skip blank lines and comments
-    if (!line_len || trimmed[0] == '#') {
-      ++line_num;
-      continue;
-    }
-    // Parse the line
-    i32 equal_idx = kstridx(trimmed, '=');
-    if (equal_idx == -1) {
-      KWARN("load_cfg_file :: `%s:%ui` -> skipping line due to '=' char not found",
-            path,
-            line_num);
-      ++line_num;
-      continue;
-    }
-    // Store variable
-    char raw_var[MATERIAL_FILE_VAR_MAX_SIZE];
-    kzero_memory(raw_var, sizeof(char) * MATERIAL_FILE_VAR_MAX_SIZE);
-    kstrsub(raw_var, trimmed, 0, equal_idx);
-    char *trimmed_var = kstrtr(raw_var);
-    // Store value
-    char raw_value[MATERIAL_FILE_VALUE_MAX_SIZE];
-    kzero_memory(raw_value, sizeof(char) * MATERIAL_FILE_VALUE_MAX_SIZE);
-    kstrsub(raw_value, trimmed, equal_idx + 1, -1);
-    char *trimmed_value = kstrtr(raw_value);
-
-    // Process variable against value
-    if (kstrcmpi(trimmed_var, "version")) {
-      // TODO: handle version
-    }
-    else if (kstrcmpi(trimmed_var, "name")) {
-      kstrncp(out_cfg->name, trimmed_value, MATERIAL_NAME_MAX_LEN);
-    }
-    else if (kstrcmpi(trimmed_var, "diffuse_map_name")) {
-      kstrncp(out_cfg->diffuse_map_name, trimmed_value, TEXTURE_NAME_MAX_LEN);
-    }
-    else if (kstrcmpi(trimmed_var, "diffuse_color")) {
-      if (!str_to_vec4(trimmed_value, &out_cfg->diffuse_color)) {
-        KWARN("load_cfg_file :: `%s:%ui` -> `diffuse_color` parse error (using white as fallback)",
-              path,
-              line_num);
-        out_cfg->diffuse_color = vec4_one();  // white
-      }
-    }
-
-    // Cleanup
-    kzero_memory(line_buf, sizeof(char) * MATERIAL_FILE_LINE_MAX_SIZE);
-    ++line_num;
-  }
-
-  filesystem_close(&fd);
-  return true;
-}
-
 b8 material_system_initialize(u64 *memory_requirements,
                               void *state,
                               material_system_config config) {
@@ -235,16 +157,18 @@ void material_system_shutdown(void *state) {
 }
 
 material *material_system_get(const char *name) {
-  material_config cfg;
-  char *fmt_str = "assets/materials/%s.%s";
-  char full_file_path[FILE_PATH_SIZE];
-
-  kstrfmt(full_file_path, fmt_str, name, MATERIAL_FILE_EXTENSION_NAME);
-  if (!load_cfg_file(full_file_path, &cfg)) {
-    KERROR("material_system_get :: Material file loading failed ('%s')", full_file_path);
+  resource material_resource;
+  if (!resource_system_load(name, RESOURCE_TYPE_MATERIAL, &material_resource)) {
+    KERROR("material_system_get :: failed to load material resource ('%s')", name);
     return 0;
   }
-  return material_system_get_from_cfg(cfg);
+  material *m = 0;
+  if (material_resource.data) {
+    m = material_system_get_from_cfg(*(material_config *) material_resource.data);
+  }
+  resource_system_unload(&material_resource);
+  if (!m) KERROR("material_system_get :: failed to load material resource ('%s')", name);
+  return m;
 }
 
 material *material_system_get_fallback(void) {

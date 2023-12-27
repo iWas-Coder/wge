@@ -21,25 +21,6 @@
 
 #pragma once
 
-#include <defines.h>
-#include <resource_types.h>
+#include <resource_system.h>
 
-#define FALLBACK_MATERIAL_NAME "fallback"
-
-typedef struct {
-  u32 max_material_count;
-} material_system_config;
-
-b8 material_system_initialize(u64 *memory_requirements,
-                              void *state,
-                              material_system_config config);
-
-void material_system_shutdown(void *state);
-
-material *material_system_get(const char *name);
-
-material *material_system_get_fallback(void);
-
-material *material_system_get_from_cfg(material_config cfg);
-
-void material_system_release(const char *name);
+resource_loader image_loader_create(void);

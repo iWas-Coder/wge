@@ -42,6 +42,8 @@ KAPI b8 filesystem_open(const char *path,
 
 KAPI void filesystem_close(file_handle *handle);
 
+KAPI b8 filesystem_sizeof(file_handle *handle, u64 *out_size);
+
 KAPI b8 filesystem_read_line(file_handle *handle,
                              u64 max_len,
                              char **line,
@@ -54,9 +56,13 @@ KAPI b8 filesystem_read(file_handle *handle,
                         void *out_data,
                         u64 *out_bytes_read);
 
-KAPI b8 filesystem_read_all(file_handle *handle,
-                            u8 **out_data,
-                            u64 *out_bytes_read);
+KAPI b8 filesystem_read_bytes_all(file_handle *handle,
+                                  u8 *out_bytes,
+                                  u64 *out_bytes_read);
+
+KAPI b8 filesystem_read_text_all(file_handle *handle,
+                                 char *out_text,
+                                 u64 *out_bytes_read);
 
 KAPI b8 filesystem_write(file_handle *handle,
                          u64 size,

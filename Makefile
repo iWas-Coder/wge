@@ -27,9 +27,12 @@ VERSION       = 0
 PATCHLEVEL    = 1
 SUBLEVEL      = 0
 EXTRAVERSION  =
-EXTRAVERSION += $(or $(and $(wildcard .git/), -git+$$(git rev-parse --short HEAD)),)
 NAME = Greased Wildebeest
 
+# Dev version string (Git commit) appended if no else is defined
+ifndef EXTRAVERSION
+  EXTRAVERSION += $(or $(and $(wildcard .git/), -git+$$(git rev-parse --short HEAD)),)
+endif
 # Version formatting
 ifeq ($(SUBLEVEL), 0)
   FULL_VERSION = $(VERSION).$(PATCHLEVEL)$(EXTRAVERSION)
@@ -171,7 +174,7 @@ all: $(ALL_TGTS)
 	@:
 
 wge: $(BUILD_DIR) $(WGE_OUT)
-	@echo "Engine: $< is ready  ($(FULL_VERSION))"
+	@echo "Engine: $(WGE_OUT) is ready  ($(FULL_VERSION))"
 
 check: $(TEST_BUILD_DIR) $(TEST_OUT)
 	@LD_LIBRARY_PATH=$$(pwd):$$LD_LIBRARY_PATH ./$(TEST_OUT)

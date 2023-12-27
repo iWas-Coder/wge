@@ -33,6 +33,7 @@
 #include <texture_system.h>
 #include <material_system.h>
 #include <geometry_system.h>
+#include <resource_system.h>
 #include <linear_allocator.h>
 #include <renderer_frontend.h>
 
@@ -41,6 +42,7 @@
 #define TEXTURE_SYSTEM_MAX_COUNT 65536
 #define MATERIAL_SYSTEM_MAX_COUNT 4096
 #define GEOMETRY_SYSTEM_MAX_COUNT 4096
+#define RESOURCE_SYSTEM_MAX_COUNT 32
 
 typedef struct {
   game *game_inst;
@@ -61,6 +63,8 @@ typedef struct {
   void *input_system_state;
   u64 platform_system_memory_requirements;
   void *platform_system_state;
+  u64 resource_system_memory_requirements;
+  void *resource_system_state;
   u64 renderer_system_memory_requirements;
   void *renderer_system_state;
   u64 texture_system_memory_requirements;
@@ -249,6 +253,23 @@ b8 application_create(game *game_inst) {
                                game_inst->app_config.start_width,
                                game_inst->app_config.start_height)) return false;
 
+  // Initialize resource system
+  resource_system_config resource_system_cfg = {
+    .asset_base_path = "assets",
+    .max_loader_count = RESOURCE_SYSTEM_MAX_COUNT
+  };
+  resource_system_initialize(&app_state->resource_system_memory_requirements,
+                             0,
+                             resource_system_cfg);
+  app_state->resource_system_state = linear_allocator_alloc(&app_state->systems_allocator,
+                                                           app_state->resource_system_memory_requirements);
+  if (!resource_system_initialize(&app_state->resource_system_memory_requirements,
+                                  app_state->resource_system_state,
+                                  resource_system_cfg)) {
+    KFATAL("Resource system initialization failed. Shutting down the engine...");
+    return false;
+  }
+
   // Initialize renderer system
   renderer_system_initialize(&app_state->renderer_system_memory_requirements,
                              0,
@@ -420,6 +441,7 @@ b8 application_run(void) {
   material_system_shutdown(app_state->material_system_state);
   texture_system_shutdown(app_state->texture_system_state);
   renderer_system_shutdown(app_state->renderer_system_state);
+  resource_system_shutdown(app_state->resource_system_state);
   platform_system_shutdown(app_state->platform_system_state);
   memory_system_shutdown(app_state->memory_system_state);
   event_system_shutdown(app_state->event_system_state);

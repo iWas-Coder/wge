@@ -22,7 +22,7 @@
 #include <logger.h>
 #include <kstring.h>
 #include <kmemory.h>
-#include <filesystem.h>
+#include <resource_system.h>
 #include <vulkan_shader_utils.h>
 
 #define FILENAME_MAX_LEN 512
@@ -34,34 +34,32 @@ b8 create_shader_module(vulkan_context *context,
                         u32 stage_idx,
                         vulkan_shader_stage *shader_stages) {
   char filename[FILENAME_MAX_LEN];
-  kstrfmt(filename, "assets/shaders/%s.%s.spv", name, type);
+  kstrfmt(filename, "shaders/%s.%s.spv", name, type);
 
-  // Open file
-  file_handle handle;
-  if (!filesystem_open(filename, FILE_MODE_READ, true, &handle)) {
-    KERROR("create_shader_module :: unable to open file '%s'", filename);
+  // Read binary resource
+  resource binary_resource;
+  if (!resource_system_load(filename,
+                            RESOURCE_TYPE_BINARY,
+                            &binary_resource)) {
+    KERROR("create_shader_module :: failed to read shader module '%s'", filename);
     return false;
   }
-  // Read entire file
-  u64 size = 0;
-  u8 *file_buf = 0;
-  if (!filesystem_read_all(&handle, &file_buf, &size)) {
-    KERROR("create_shader_module :: unable to read file '%s'", filename);
-    return false;
-  }
+
   // Save buffer to 'create info' struct and close file
-  kzero_memory(&shader_stages[stage_idx].create_info, sizeof(VkShaderModuleCreateInfo));
+  kzero_memory(&shader_stages[stage_idx].create_info,
+               sizeof(VkShaderModuleCreateInfo));
   shader_stages[stage_idx].create_info = (VkShaderModuleCreateInfo) {
     .sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO,
-    .codeSize = size,
-    .pCode = (u32 *) file_buf
+    .codeSize = binary_resource.data_size,
+    .pCode = (u32 *) binary_resource.data
   };
-  filesystem_close(&handle);
 
   VK_CHECK(vkCreateShaderModule(context->device.logical_device,
                                 &shader_stages[stage_idx].create_info,
                                 context->allocator,
                                 &shader_stages[stage_idx].handle));
+
+  resource_system_unload(&binary_resource);
 
   kzero_memory(&shader_stages[stage_idx].shader_stage_create_info,
                sizeof(VkPipelineShaderStageCreateInfo));
@@ -72,9 +70,5 @@ b8 create_shader_module(vulkan_context *context,
     .pName = "main"
   };
 
-  if (file_buf) {
-    kfree(file_buf, sizeof(u8) * size, MEMORY_TAG_STRING);
-    file_buf = 0;
-  }
   return true;
 }

@@ -24,13 +24,8 @@
 #include <kmemory.h>
 #include <hash_table.h>
 #include <texture_system.h>
+#include <resource_system.h>
 #include <renderer_frontend.h>
-
-// TODO: move to resource system
-#define STB_IMAGE_IMPLEMENTATION
-#include <stb/stb_image.h>
-
-#define FILE_PATH_SIZE 512
 
 typedef struct {
   texture_system_config config;
@@ -104,47 +99,27 @@ void destroy_fallback_textures(texture_system_state *state) {
 
 // TODO: move to resource system
 b8 load_texture(const char *name, texture *t) {
-  const i32 required_channel_count = 4;
-  char *format_str = "assets/textures/%s.%s";
-  stbi_set_flip_vertically_on_load(true);
-  char full_file_path[FILE_PATH_SIZE];
-
-  kstrfmt(full_file_path, format_str, name, "png");
-
-  texture t_tmp;
-  u8 *data = stbi_load(full_file_path,
-                       (i32 *) &t_tmp.width,
-                       (i32 *) &t_tmp.height,
-                       (i32 *) &t_tmp.channel_count,
-                       required_channel_count);
-  t_tmp.channel_count = required_channel_count;
-
-  if (!data) {
-    if (stbi_failure_reason()) {
-      KWARN("load_texture :: failed to load file '%s': %s",
-            full_file_path,
-            stbi_failure_reason());
-      stbi__err(0, 0);
-    }
+  resource img_resource;
+  if (!resource_system_load(name, RESOURCE_TYPE_IMAGE, &img_resource)) {
+    KERROR("load_texture :: failed to load image resource for texture '%s'", name);
     return false;
   }
+  image_resource_data *resource_data = img_resource.data;
+  texture t_tmp = {
+    .width = resource_data->width,
+    .height = resource_data->height,
+    .channel_count = resource_data->channel_count
+  };
 
   u32 current_gen = t->generation;
   t->generation = INVALID_ID;
   u64 total_size = t_tmp.width * t_tmp.height * t_tmp.channel_count;
   b32 has_transparency = false;
-  for (u64 i = 0; i < total_size; i += required_channel_count) {
-    if (data[i + 3] < 255) {
+  for (u64 i = 0; i < total_size; i += t_tmp.channel_count) {
+    if (resource_data->pixels[i + 3] < 255) {
       has_transparency = true;
       break;
     }
-  }
-  if (stbi_failure_reason()) {
-    KWARN("load_texture :: failed to load file '%s': %s",
-          full_file_path,
-          stbi_failure_reason());
-    stbi__err(0, 0);
-    return false;
   }
 
   kstrncp(t_tmp.name, name, TEXTURE_NAME_MAX_LEN);
@@ -152,14 +127,14 @@ b8 load_texture(const char *name, texture *t) {
   t_tmp.has_transparency = has_transparency;
 
   // Create texture
-  renderer_create_texture(data, &t_tmp);
+  renderer_create_texture(resource_data->pixels, &t_tmp);
   texture old = *t;
   *t = t_tmp;
   renderer_destroy_texture(&old);
   if (current_gen == INVALID_ID) t->generation = 0;
   else t->generation = current_gen + 1;
 
-  stbi_image_free(data);
+  resource_system_unload(&img_resource);
   return true;
 }
 

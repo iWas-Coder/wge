@@ -30,13 +30,6 @@ typedef struct {
   u32 max_material_count;
 } material_system_config;
 
-typedef struct {
-  char name[MATERIAL_NAME_MAX_LEN];
-  b8 auto_release;
-  Vector4 diffuse_color;
-  char diffuse_map_name[TEXTURE_NAME_MAX_LEN];
-} material_config;
-
 b8 material_system_initialize(u64 *memory_requirements,
                               void *state,
                               material_system_config config);

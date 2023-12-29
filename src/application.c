@@ -392,19 +392,20 @@ b8 application_run(void) {
         break;
       }
 
-      render_packet packet;
-      packet.delta_time = delta;
-
       // TEMPORARY START: geometry test
       geometry_render_data test_render = {
         .geometry = app_state->test_geometry,
         .model = mat4_id()
       };
-      packet.geometry_count = 1;
-      packet.geometries = &test_render;
-      // TEMPORARY END: geometry test
-      
+      render_packet packet = {
+        .delta_time = delta,
+        .geometry_count = 1,
+        .ui_geometry_count = 0,
+        .geometries = &test_render,
+        .ui_geometries = 0
+      };
       renderer_draw_frame(&packet);
+      // TEMPORARY END: geometry test
 
       f64 frame_end_time = platform_get_absolute_time();
       f64 frame_elapsed_time = frame_end_time - frame_start_time;

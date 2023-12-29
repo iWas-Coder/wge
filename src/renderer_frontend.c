@@ -34,6 +34,8 @@ typedef struct {
   renderer_backend backend;
   Matrix4 proj;
   Matrix4 view;
+  Matrix4 ui_proj;
+  Matrix4 ui_view;
   f32 near_clip;
   f32 far_clip;
 } renderer_system_state;
@@ -56,6 +58,7 @@ b8 renderer_system_initialize(u64 *memory_requirements,
     return false;
   }
 
+  // World projection and view properties
   state_ptr->near_clip = 0.1f;
   state_ptr->far_clip = 1000.0f;
   state_ptr->proj = mat4_persp_proj(deg_to_rad(45.0f),
@@ -63,6 +66,15 @@ b8 renderer_system_initialize(u64 *memory_requirements,
                                    state_ptr->near_clip,
                                    state_ptr->far_clip);
   state_ptr->view = mat4_inv(mat4_translation((Vector3) {{{ 0, 0, -30.0f }}}));
+
+  // UI projection and view properties
+  state_ptr->ui_proj = mat4_ortho_proj(0,
+                                      1280.0f,
+                                      720.0f,
+                                      0,
+                                      -100.0f,
+                                      100.0f);
+  state_ptr->ui_view = mat4_inv(mat4_id());
 
   return true;
 }
@@ -81,32 +93,63 @@ void renderer_on_resized(u16 width, u16 height) {
                                      (f32) width / height,
                                      state_ptr->near_clip,
                                      state_ptr->far_clip);
+    state_ptr->ui_proj = mat4_ortho_proj(0,
+                                        (f32) width,
+                                        (f32) height,
+                                        0,
+                                        -100.0f,
+                                        100.0f);
     state_ptr->backend.resized(&state_ptr->backend, width, height);
   }
   else KWARN("renderer_on_resized :: Renderer backend does not exist");
 }
 
-b8 renderer_begin_frame(f32 delta_time) {
-  if (!state_ptr) return false;
-  return state_ptr->backend.begin_frame(&state_ptr->backend, delta_time);
-}
-
-b8 renderer_end_frame(f32 delta_time) {
-  if (!state_ptr) return false;
-  b8 result = state_ptr->backend.end_frame(&state_ptr->backend, delta_time);
-  ++(state_ptr->backend.frame_number);
-  return result;
-}
-
 b8 renderer_draw_frame(render_packet *packet) {
-  if (renderer_begin_frame(packet->delta_time)) {
-    state_ptr->backend.update(state_ptr->proj, state_ptr->view, vec3_zero(), vec4_one(), 0);
+  // Begin frame
+  if (state_ptr->backend.begin_frame(&state_ptr->backend, packet->delta_time)) {
+    // Begin world renderpass
+    if (!state_ptr->backend.begin_renderpass(&state_ptr->backend, BUILTIN_RENDERPASS_WORLD)) {
+      KERROR("renderer_draw_frame :: World's `begin_renderpass` failed");
+      return false;
+    }
 
+    // Update world global state
+    state_ptr->backend.update_world(state_ptr->proj, state_ptr->view, vec3_zero(), vec4_one(), 0);
+
+    // Draw world geometries
     for (u32 i = 0; i < packet->geometry_count; ++i) {
       state_ptr->backend.draw_geometry(packet->geometries[i]);
     }
 
-    b8 result = renderer_end_frame(packet->delta_time);
+    // End world renderpass
+    if (!state_ptr->backend.end_renderpass(&state_ptr->backend, BUILTIN_RENDERPASS_WORLD)) {
+      KERROR("renderer_draw_frame :: World's `end_renderpass` failed");
+      return false;
+    }
+
+    // Begin UI renderpass
+    if (!state_ptr->backend.begin_renderpass(&state_ptr->backend, BUILTIN_RENDERPASS_UI)) {
+      KERROR("renderer_draw_frame :: UI's `begin_renderpass` failed");
+      return false;
+    }
+
+    // Update UI global state
+    state_ptr->backend.update_ui(state_ptr->ui_proj, state_ptr->ui_view, 0);
+
+    // Draw UI geometries
+    for (u32 i = 0; i < packet->ui_geometry_count; ++i) {
+      state_ptr->backend.draw_geometry(packet->ui_geometries[i]);
+    }
+
+    // End UI renderpass
+    if (!state_ptr->backend.end_renderpass(&state_ptr->backend, BUILTIN_RENDERPASS_UI)) {
+      KERROR("renderer_draw_frame :: UI's `end_renderpass` failed");
+      return false;
+    }
+
+    // End frame
+    b8 result = state_ptr->backend.end_frame(&state_ptr->backend, packet->delta_time);
+    ++state_ptr->backend.frame_number;
     if (!result) {
       KERROR("`renderer_draw_frame` failed. Shutting down the engine...");
       return false;

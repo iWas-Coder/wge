@@ -27,6 +27,7 @@
 
 b8 vulkan_graphics_pipeline_create(vulkan_context *context,
                                    vulkan_renderpass *renderpass,
+                                   u32 stride,
                                    u32 attribute_count,
                                    VkVertexInputAttributeDescription *attributes,
                                    u32 descriptor_set_layout_count,
@@ -36,6 +37,7 @@ b8 vulkan_graphics_pipeline_create(vulkan_context *context,
                                    VkViewport viewport,
                                    VkRect2D scissor,
                                    b8 is_wireframe,
+                                   b8 depth_test_enabled,
                                    vulkan_pipeline *out_pipeline) {
   // Dynamic state
   const u32 dynamic_state_count = 3;
@@ -75,14 +77,17 @@ b8 vulkan_graphics_pipeline_create(vulkan_context *context,
     .alphaToCoverageEnable = VK_FALSE,
     .alphaToOneEnable = VK_FALSE
   };
-  VkPipelineDepthStencilStateCreateInfo depth_stencil = {
-    .sType = VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO,
-    .depthTestEnable = VK_TRUE,
-    .depthWriteEnable = VK_TRUE,
-    .depthCompareOp = VK_COMPARE_OP_LESS,
-    .depthBoundsTestEnable = VK_FALSE,
-    .stencilTestEnable = VK_FALSE
-  };
+  VkPipelineDepthStencilStateCreateInfo depth_stencil = {0};
+  if (depth_test_enabled) {
+    depth_stencil = (VkPipelineDepthStencilStateCreateInfo) {
+      .sType = VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO,
+      .depthTestEnable = VK_TRUE,
+      .depthWriteEnable = VK_TRUE,
+      .depthCompareOp = VK_COMPARE_OP_LESS,
+      .depthBoundsTestEnable = VK_FALSE,
+      .stencilTestEnable = VK_FALSE
+    };
+  }
   VkPipelineColorBlendAttachmentState color_blend_attachment_state = {
     .blendEnable = VK_TRUE,
     .srcColorBlendFactor = VK_BLEND_FACTOR_SRC_ALPHA,
@@ -107,7 +112,7 @@ b8 vulkan_graphics_pipeline_create(vulkan_context *context,
   };
   VkVertexInputBindingDescription binding_description = {
     .binding = 0,
-    .stride = sizeof(vertex_3d),
+    .stride = stride,
     .inputRate = VK_VERTEX_INPUT_RATE_VERTEX
   };
   VkPipelineVertexInputStateCreateInfo vertex_input_info = {
@@ -150,7 +155,7 @@ b8 vulkan_graphics_pipeline_create(vulkan_context *context,
     .pViewportState = &viewport_state,
     .pRasterizationState = &rasterizer_create_info,
     .pMultisampleState = &multisampling_create_info,
-    .pDepthStencilState = &depth_stencil,
+    .pDepthStencilState = depth_test_enabled ? &depth_stencil : 0,
     .pColorBlendState = &color_blend_state_create_info,
     .pDynamicState = &dynamic_state_create_info,
     .pTessellationState = 0,

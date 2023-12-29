@@ -19,17 +19,25 @@
  */
 
 
-#pragma once
-#include <vulkan_types.h>
+#version 450
 
-void vulkan_fence_create(vulkan_context *context,
-                         b8 create_signaled,
-                         vulkan_fence *out_fence);
+layout(location = 0) in vec2 in_pos;
+layout(location = 1) in vec2 in_texcoord;
 
-void vulkan_fence_destroy(vulkan_context *context, vulkan_fence *fence);
+layout(set = 0, binding = 0) uniform global_uniform_obj {
+  mat4 proj;
+  mat4 view;
+} global_ubo;
+layout(push_constant) uniform push_constants {
+  mat4 model;
+} u_push_constants;
 
-b8 vulkan_fence_wait(vulkan_context *context,
-                     vulkan_fence *fence,
-                     u64 timeout);
+layout(location = 0) out int out_mode;
+layout(location = 1) out struct dto {
+  vec2 texcoord;
+} out_dto;
 
-void vulkan_fence_reset(vulkan_context *context, vulkan_fence *fence);
+void main(void) {
+  out_dto.texcoord = vec2(in_texcoord.x, 1.0 - in_texcoord.y);
+  gl_Position = global_ubo.proj * global_ubo.view * u_push_constants.model * vec4(in_pos, 0.0, 1.0);
+}

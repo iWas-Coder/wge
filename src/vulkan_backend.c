@@ -27,7 +27,6 @@
 #include <application.h>
 #include <vulkan_types.h>
 #include <vulkan_utils.h>
-#include <vulkan_fence.h>
 #include <vulkan_image.h>
 #include <vulkan_device.h>
 #include <vulkan_buffer.h>
@@ -35,10 +34,10 @@
 #include <vulkan_platform.h>
 #include <material_system.h>
 #include <vulkan_swapchain.h>
+#include <vulkan_ui_shader.h>
 #include <vulkan_renderpass.h>
-#include <vulkan_framebuffer.h>
-#include <vulkan_material_shader.h>
 #include <vulkan_command_buffer.h>
+#include <vulkan_material_shader.h>
 
 static vulkan_context context;
 static u32 cached_framebuffer_width = 0;
@@ -80,6 +79,8 @@ i32 find_memory_index(u32 type_filter, u32 property_flags) {
 
 b8 create_buffers(vulkan_context *context) {
   VkMemoryPropertyFlagBits memory_property_flags = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT;
+
+  // Geometry vertex buffer
   const u64 vertex_buf_size = sizeof(vertex_3d) * 1024 * 1024;
   if (!vulkan_buffer_create(context,
                             vertex_buf_size,
@@ -92,6 +93,7 @@ b8 create_buffers(vulkan_context *context) {
   }
   context->geometry_vertex_offset = 0;
 
+  // Geometry index buffer
   const u64 index_buf_size = sizeof(u32) * 1024 * 1024;
   if (!vulkan_buffer_create(context,
                             index_buf_size,
@@ -133,24 +135,43 @@ void create_command_buffers(renderer_backend *backend) {
   KDEBUG("Vulkan command buffers created");
 }
 
-void regenerate_framebuffers(renderer_backend *backend,
-                             vulkan_swapchain *swapchain,
-                             vulkan_renderpass *renderpass) {
-  (void) backend;  // Unused parameter
-
-  u32 attachment_count = 2;
-  for (u32 i = 0; i < swapchain->image_count; ++i) {
-    VkImageView attachments[] = {
-      swapchain->views[i],
-      swapchain->depth_attachment.view
+void regenerate_framebuffers(void) {
+  u32 image_count = context.swapchain.image_count;
+  for (u32 i = 0; i < image_count; ++i) {
+    // Main/world renderpass
+    VkImageView world_attachments[] = {
+      context.swapchain.views[i],
+      context.swapchain.depth_attachment.view
     };
-    vulkan_framebuffer_create(&context,
-                              renderpass,
-                              context.framebuffer_width,
-                              context.framebuffer_height,
-                              attachment_count,
-                              attachments,
-                              &context.swapchain.framebuffers[i]);
+    VkFramebufferCreateInfo framebuffer_create_info = {
+      .sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO,
+      .renderPass = context.main_renderpass.handle,
+      .attachmentCount = 2,
+      .pAttachments = world_attachments,
+      .width = context.framebuffer_width,
+      .height = context.framebuffer_height,
+      .layers = 1
+    };
+    VK_CHECK(vkCreateFramebuffer(context.device.logical_device,
+                                 &framebuffer_create_info,
+                                 context.allocator,
+                                 &context.world_framebuffers[i]));
+
+    // UI renderpass
+    VkImageView ui_attachments[] = { context.swapchain.views[i] };
+    VkFramebufferCreateInfo sc_framebuffer_create_info = {
+      VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO,
+      .renderPass = context.ui_renderpass.handle,
+      .attachmentCount = 1,
+      .pAttachments = ui_attachments,
+      .width = context.framebuffer_width,
+      .height = context.framebuffer_height,
+      .layers = 1
+    };
+    VK_CHECK(vkCreateFramebuffer(context.device.logical_device,
+                                 &sc_framebuffer_create_info,
+                                 context.allocator,
+                                 &context.swapchain.framebuffers[i]));
   }
 }
 
@@ -182,8 +203,8 @@ b8 recreate_swapchain(renderer_backend *backend) {
   context.framebuffer_height = cached_framebuffer_height;
   cached_framebuffer_width = 0;
   cached_framebuffer_height = 0;
-  context.main_renderpass.w = context.framebuffer_width;
-  context.main_renderpass.h = context.framebuffer_height;
+  context.main_renderpass.render_area.z = context.framebuffer_width;
+  context.main_renderpass.render_area.w = context.framebuffer_height;
   // Sync framebuffer size generation
   context.framebuffer_size_last_generation = context.framebuffer_size_generation;
 
@@ -194,16 +215,21 @@ b8 recreate_swapchain(renderer_backend *backend) {
                                &context.graphics_command_buffers[i]);
   }
   for (u32 i = 0; i < context.swapchain.image_count; ++i) {
-    vulkan_framebuffer_destroy(&context, &context.swapchain.framebuffers[i]);
+    vkDestroyFramebuffer(context.device.logical_device,
+                         context.world_framebuffers[i],
+                         context.allocator);
+    vkDestroyFramebuffer(context.device.logical_device,
+                         context.swapchain.framebuffers[i],
+                         context.allocator);
   }
 
-  context.main_renderpass.x = 0;
-  context.main_renderpass.y = 0;
-  context.main_renderpass.w = context.framebuffer_width;
-  context.main_renderpass.h = context.framebuffer_height;
+  context.main_renderpass.render_area.x = 0;
+  context.main_renderpass.render_area.y = 0;
+  context.main_renderpass.render_area.z = context.framebuffer_width;
+  context.main_renderpass.render_area.w = context.framebuffer_height;
 
   // Recreate framebuffers and command buffers
-  regenerate_framebuffers(backend, &context.swapchain, &context.main_renderpass);
+  regenerate_framebuffers();
   create_command_buffers(backend);
 
   context.recreating_swapchain = false;
@@ -372,19 +398,51 @@ b8 vulkan_renderer_backend_initialize(renderer_backend *backend, const char *app
                           context.framebuffer_height,
                           &context.swapchain);
 
-  // Create renderpass
+  // Create world renderpass
   vulkan_renderpass_create(&context,
                            &context.main_renderpass,
-                           0, 0,
-                           context.framebuffer_width,
-                           context.framebuffer_height,
-                           0.0f, 0.0f, 0.2f, 1.0f,
-                           1.0f, 0);
+                           (Vector4) {{
+                               0,
+                               0,
+                               context.framebuffer_width,
+                               context.framebuffer_height
+                             }},
+                           (Vector4) {{
+                               0.0f,
+                               0.0f,
+                               0.2f,
+                               1.0f
+                             }},
+                           1.0f,
+                           0,
+                           RENDERPASS_CLEAR_COLOR_BUFFER_FLAG |
+                           RENDERPASS_CLEAR_DEPTH_BUFFER_FLAG |
+                           RENDERPASS_CLEAR_STENCIL_BUFFER_FLAG,
+                           false,
+                           true);
+  // Create UI renderpass
+  vulkan_renderpass_create(&context,
+                           &context.ui_renderpass,
+                           (Vector4) {{
+                               0,
+                               0,
+                               context.framebuffer_width,
+                               context.framebuffer_height
+                             }},
+                           (Vector4) {{
+                               0.0f,
+                               0.0f,
+                               0.0f,
+                               0.0f
+                             }},
+                           1.0f,
+                           0,
+                           RENDERPASS_CLEAR_NONE_FLAG,
+                           true,
+                           false);
 
   // Create swapchain framebuffers
-  context.swapchain.framebuffers = darray_reserve(vulkan_framebuffer,
-                                                  context.swapchain.image_count);
-  regenerate_framebuffers(backend, &context.swapchain, &context.main_renderpass);
+  regenerate_framebuffers();
 
   // Create command buffers
   create_command_buffers(backend);
@@ -394,8 +452,7 @@ b8 vulkan_renderer_backend_initialize(renderer_backend *backend, const char *app
                                                       context.swapchain.max_frames_in_flight);
   context.queue_complete_semaphores = darray_reserve(VkSemaphore,
                                                      context.swapchain.max_frames_in_flight);
-  context.in_flight_fences = darray_reserve(vulkan_fence,
-                                            context.swapchain.max_frames_in_flight);
+
   for (u8 i = 0; i < context.swapchain.max_frames_in_flight; ++i) {
     VkSemaphoreCreateInfo semaphore_create_info = {
       .sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO
@@ -410,14 +467,25 @@ b8 vulkan_renderer_backend_initialize(renderer_backend *backend, const char *app
                       context.allocator,
                       &context.queue_complete_semaphores[i]);
     // Fences
-    vulkan_fence_create(&context, true, &context.in_flight_fences[i]);
+    VkFenceCreateInfo fence_create_info = {
+      .sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO,
+      .flags = VK_FENCE_CREATE_SIGNALED_BIT
+    };
+    VK_CHECK(vkCreateFence(context.device.logical_device,
+                           &fence_create_info,
+                           context.allocator,
+                           &context.in_flight_fences[i]));
   }
-  context.images_in_flight = darray_reserve(vulkan_fence, context.swapchain.image_count);
+
   for (u32 i = 0; i < context.swapchain.image_count; ++i) context.images_in_flight[i] = 0;
 
   // Create builtin shaders
   if (!vulkan_material_shader_create(&context, &context.material_shader)) {
-    KERROR("Failed to create the builtin shader");
+    KERROR("Failed to create the builtin material shader");
+    return false;
+  }
+  if (!vulkan_ui_shader_create(&context, &context.ui_shader)) {
+    KERROR("Failed to create the builtin UI shader");
     return false;
   }
 
@@ -440,6 +508,7 @@ void vulkan_renderer_backend_shutdown(renderer_backend *backend) {
   vulkan_buffer_destroy(&context, &context.object_vertex_buffer);
   vulkan_buffer_destroy(&context, &context.object_index_buffer);
 
+  vulkan_ui_shader_destroy(&context, &context.ui_shader);
   vulkan_material_shader_destroy(&context, &context.material_shader);
 
   // Destroy semaphores & fences
@@ -458,16 +527,14 @@ void vulkan_renderer_backend_shutdown(renderer_backend *backend) {
       context.queue_complete_semaphores[i] = 0;
     }
     // Fences
-    vulkan_fence_destroy(&context, &context.in_flight_fences[i]);
+    vkDestroyFence(context.device.logical_device,
+                   context.in_flight_fences[i],
+                   context.allocator);
   }
   darray_destroy(context.image_available_semaphores);
   darray_destroy(context.queue_complete_semaphores);
-  darray_destroy(context.in_flight_fences);
-  darray_destroy(context.images_in_flight);
   context.image_available_semaphores = 0;
   context.queue_complete_semaphores = 0;
-  context.in_flight_fences = 0;
-  context.images_in_flight = 0;
 
   // Destroy command buffers
   for (u32 i = 0; i < context.swapchain.image_count; ++i) {
@@ -483,11 +550,17 @@ void vulkan_renderer_backend_shutdown(renderer_backend *backend) {
 
   // Destroy swapchain framebuffers
   for (u32 i = 0; i < context.swapchain.image_count; ++i) {
-    vulkan_framebuffer_destroy(&context, &context.swapchain.framebuffers[i]);
+    vkDestroyFramebuffer(context.device.logical_device,
+                         context.world_framebuffers[i],
+                         context.allocator);
+    vkDestroyFramebuffer(context.device.logical_device,
+                         context.swapchain.framebuffers[i],
+                         context.allocator);
   }
 
-  // Destroy renderpass
+  // Destroy renderpasses
   vulkan_renderpass_destroy(&context, &context.main_renderpass);
+  vulkan_renderpass_destroy(&context, &context.ui_renderpass);
 
   // Destroy swapchain
   vulkan_swapchain_destroy(&context, &context.swapchain);
@@ -554,10 +627,14 @@ b8 vulkan_renderer_backend_begin_frame(renderer_backend *backend, f32 delta_time
     return false;
   }
 
-  if (!vulkan_fence_wait(&context,
-                         &context.in_flight_fences[context.current_frame],
-                         UINT64_MAX)) {
-    KWARN("vulkan_fence_wait :: in-flight fence wait operation failed");
+  VkResult result = vkWaitForFences(context.device.logical_device,
+                                    1,
+                                    &context.in_flight_fences[context.current_frame],
+                                    true,
+                                    UINT64_MAX);
+  if (!vulkan_result_is_success(result)) {
+    KERROR("vulkan_renderer_backend_begin_frame :: `in_flight_fences` wait failed (%s)",
+           vulkan_result_string(result, true));
     return false;
   }
 
@@ -590,22 +667,17 @@ b8 vulkan_renderer_backend_begin_frame(renderer_backend *backend, f32 delta_time
   vkCmdSetViewport(command_buffer->handle, 0, 1, &viewport);
   vkCmdSetScissor(command_buffer->handle, 0, 1, &scissor);
 
-  context.main_renderpass.w = context.framebuffer_width;
-  context.main_renderpass.h = context.framebuffer_height;
-
-  // Begin the main renderpass
-  vulkan_renderpass_begin(command_buffer,
-                          &context.main_renderpass,
-                          context.swapchain.framebuffers[context.image_index].handle);
+  context.main_renderpass.render_area.z = context.framebuffer_width;
+  context.main_renderpass.render_area.w = context.framebuffer_height;
 
   return true;
 }
 
-void vulkan_renderer_backend_update(Matrix4 proj,
-                                    Matrix4 view,
-                                    Vector3 view_pos,
-                                    Vector4 ambient_color,
-                                    i32 mode) {
+void vulkan_renderer_backend_update_world(Matrix4 proj,
+                                          Matrix4 view,
+                                          Vector3 view_pos,
+                                          Vector4 ambient_color,
+                                          i32 mode) {
   (void) view_pos;       // Unused parameter
   (void) ambient_color;  // Unused parameter
   (void) mode;           // Unused parameter
@@ -613,7 +685,20 @@ void vulkan_renderer_backend_update(Matrix4 proj,
   vulkan_material_shader_use(&context, &context.material_shader);
   context.material_shader.global_ubo.proj = proj;
   context.material_shader.global_ubo.view = view;
-  vulkan_material_shader_update(&context, &context.material_shader, context.frame_delta_time);
+  vulkan_material_shader_update(&context,
+                                &context.material_shader,
+                                context.frame_delta_time);
+}
+
+void vulkan_renderer_backend_update_ui(Matrix4 proj, Matrix4 view, i32 mode) {
+  (void) mode;  // Unused parameter
+
+  vulkan_ui_shader_use(&context, &context.ui_shader);
+  context.ui_shader.global_ubo.proj = proj;
+  context.ui_shader.global_ubo.view = view;
+  vulkan_ui_shader_update(&context,
+                          &context.ui_shader,
+                          context.frame_delta_time);
 }
 
 b8 vulkan_renderer_backend_end_frame(renderer_backend *backend, f32 delta_time) {
@@ -622,19 +707,25 @@ b8 vulkan_renderer_backend_end_frame(renderer_backend *backend, f32 delta_time) 
 
   vulkan_command_buffer *command_buffer = &context.graphics_command_buffers[context.image_index];
 
-  // End the main renderpass
-  vulkan_renderpass_end(command_buffer, &context.main_renderpass);
   // End the command buffer
   vulkan_command_buffer_end(command_buffer);
 
   if (context.images_in_flight[context.image_index] != VK_NULL_HANDLE) {
-    vulkan_fence_wait(&context,
-                      context.images_in_flight[context.image_index],
-                      UINT64_MAX);
+    VkResult result = vkWaitForFences(context.device.logical_device,
+                                      1,
+                                      context.images_in_flight[context.image_index],
+                                      true,
+                                      UINT64_MAX);
+    if (!vulkan_result_is_success(result)) {
+      KFATAL("vulkan_renderer_backend_end_frame :: `images_in_flight` wait failed (%s)",
+             vulkan_result_string(result, true));
+    }
   }
   context.images_in_flight[context.image_index] = &context.in_flight_fences[context.current_frame];
 
-  vulkan_fence_reset(&context, &context.in_flight_fences[context.current_frame]);
+  VK_CHECK(vkResetFences(context.device.logical_device,
+                         1,
+                         &context.in_flight_fences[context.current_frame]));
 
   VkPipelineStageFlags flags[] = { VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT };
   VkSubmitInfo submit_info = {
@@ -650,7 +741,7 @@ b8 vulkan_renderer_backend_end_frame(renderer_backend *backend, f32 delta_time) 
   VkResult result = vkQueueSubmit(context.device.graphics_queue,
                                   1,
                                   &submit_info,
-                                  context.in_flight_fences[context.current_frame].handle);
+                                  context.in_flight_fences[context.current_frame]);
   if (result != VK_SUCCESS) {
     KERROR("vulkan_renderer_backend_end_frame :: %s", vulkan_result_string(result, true));
     return false;
@@ -665,6 +756,64 @@ b8 vulkan_renderer_backend_end_frame(renderer_backend *backend, f32 delta_time) 
                            context.queue_complete_semaphores[context.current_frame],
                            context.image_index);
 
+  return true;
+}
+
+b8 vulkan_renderer_backend_begin_renderpass(renderer_backend *backend, u8 renderpass_id) {
+  (void) backend;  // Unused parameter
+
+  vulkan_command_buffer *command_buffer = &context.graphics_command_buffers[context.image_index];
+  vulkan_renderpass *renderpass = 0;
+  VkFramebuffer framebuffer = 0;
+
+  switch (renderpass_id) {
+  case BUILTIN_RENDERPASS_WORLD:
+    renderpass = &context.main_renderpass;
+    framebuffer = context.world_framebuffers[context.image_index];
+    break;
+  case BUILTIN_RENDERPASS_UI:
+    renderpass = &context.ui_renderpass;
+    framebuffer = context.swapchain.framebuffers[context.image_index];
+    break;
+  default:
+    KERROR("vulkan_renderer_backend_begin_renderpass :: renderpass ID (%#02x) not valid",
+           renderpass_id);
+    return false;
+  }
+
+  vulkan_renderpass_begin(command_buffer, renderpass, framebuffer);
+
+  switch (renderpass_id) {
+  case BUILTIN_RENDERPASS_WORLD:
+    vulkan_material_shader_use(&context, &context.material_shader);
+    break;
+  case BUILTIN_RENDERPASS_UI:
+    vulkan_ui_shader_use(&context, &context.ui_shader);
+    break;
+  }
+  return true;
+}
+
+b8 vulkan_renderer_backend_end_renderpass(renderer_backend *backend, u8 renderpass_id) {
+  (void) backend;  // Unused parameter
+
+  vulkan_command_buffer *command_buffer = &context.graphics_command_buffers[context.image_index];
+  vulkan_renderpass *renderpass = 0;
+
+  switch (renderpass_id) {
+  case BUILTIN_RENDERPASS_WORLD:
+    renderpass = &context.main_renderpass;
+    break;
+  case BUILTIN_RENDERPASS_UI:
+    renderpass = &context.ui_renderpass;
+    break;
+  default:
+    KERROR("vulkan_renderer_backend_end_renderpass :: renderpass ID (%#02x) not valid",
+           renderpass_id);
+    return false;
+  }
+
+  vulkan_renderpass_end(command_buffer, renderpass);
   return true;
 }
 
@@ -812,8 +961,8 @@ void vulkan_renderer_backend_destroy_geometry(geometry *geometry) {
                   internal_data->vertex_size);
   // Index data
   if (internal_data->index_size) free_data_range(&context.object_index_buffer,
-                                                internal_data->index_buffer_offset,
-                                                internal_data->index_size);
+                                                 internal_data->index_buffer_offset,
+                                                 internal_data->index_size);
 
   kzero_memory(internal_data, sizeof(vulkan_geometry_data));
   internal_data->id = INVALID_ID;

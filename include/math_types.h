@@ -67,6 +67,11 @@ typedef union {
 } Matrix4;
 
 typedef struct {
+  Vector2 position;
+  Vector2 texcoord;
+} vertex_2d;
+
+typedef struct {
   Vector3 position;
   Vector2 texcoord;
 } vertex_3d;

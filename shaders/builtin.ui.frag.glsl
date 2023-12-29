@@ -19,16 +19,20 @@
  */
 
 
-#pragma once
+#version 450
 
-#include <vulkan_types.h>
+layout(location = 0) flat in int in_mode;
+layout(location = 1) in struct dto {
+  vec2 texcoord;
+} in_dto;
 
-void vulkan_framebuffer_create(vulkan_context *context,
-                               vulkan_renderpass *renderpass,
-                               u32 width,
-                               u32 height,
-                               u32 attachment_count,
-                               VkImageView *attachments,
-                               vulkan_framebuffer *out_framebuffer);
+layout(set = 1, binding = 0) uniform local_uniform_object {
+  vec4 diffuse_color;
+} object_ubo;
+layout(set = 1, binding = 1) uniform sampler2D diffuse_sampler;
 
-void vulkan_framebuffer_destroy(vulkan_context *context, vulkan_framebuffer *framebuffer);
+layout(location = 0) out vec4 out_color;
+
+void main(void) {
+  out_color = object_ubo.diffuse_color * texture(diffuse_sampler, in_dto.texcoord);
+}

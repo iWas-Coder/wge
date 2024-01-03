@@ -39,9 +39,15 @@ This program is distributed in the hope that it will be useful, but WITHOUT ANY 
   - [[#platform-support][Platform support]]
   - [[#tech-stack][Tech stack]]
   - [[#project-structure][Project structure]]
-  - [[#feature-list][Feature list]]
+  - [[#features][Features]]
+    - [[#high-level-product-features][High-level product features]]
+    - [[#feature-roadmap][Feature roadmap]]
+      - [[#general][General]]
+      - [[#renderer][Renderer]]
+      - [[#ui][UI]]
+      - [[#miscellany][Miscellany]]
   - [[#engine-architecture][Engine architecture]]
-  - [[#renderer][Renderer]]
+  - [[#renderer-1][Renderer]]
     - [[#architecture][Architecture]]
     - [[#lifecycle][Lifecycle]]
     - [[#phases][Phases]]
@@ -73,11 +79,13 @@ mindmap
     ("Editor (exec)")
 #+end_src
 
-** Feature list
+** Features
+
+*** High-level product features
 
 - Lightweight build system (GNU Make)
 - Low-level utilities (dynamic arrays, string handling, etc.)
-- Platform layer (Linux and Windows abstractions for windowing, input, console interaction, etc.)
+- Platform layer (OS-based abstractions for windowing, input, console interaction, etc.)
 - Logger (debugging purposes)
 - File I/O capabilities
 - Application layer
@@ -87,6 +95,147 @@ mindmap
 - Profiling and debugging utilities
 - Scripts support via hot-realoadable modules
 - Physics system
+
+*** Feature roadmap
+
+**** General
+
+- [X] Platform layer
+- [X] Desktop GNU/Linux support
+- [ ] Desktop Windows support
+- [ ] Desktop macOS support
+- [ ] Mobile Android support (runtime)
+- [ ] Mobile iOS support (runtime)
+- [X] Dynamic array
+- [ ] Free list
+- [X] Hash table
+- [ ] Stack
+- [ ] Queue
+- [ ] Ring
+- [ ] Pool
+- [ ] Binary Search Tree (BST)
+- [X] Logger (basic)
+- [ ] Multithreaded logging
+- [ ] Logger channel grouping
+- [X] Clock (basic)
+- [ ] Clock (advanced)
+- [X] Events (basic)
+- [ ] Event broadcast
+- [ ] Event polling
+- [ ] Multithreaded events
+- [X] Keyboard support
+- [ ] Mouse support
+- [ ] Gamepad support
+- [ ] Touchscreen/mobile support
+- [X] String library (basic)
+- [ ] String library (struct based)
+- [X] Math library
+- [ ] SIMD support for math library
+- [X] Linear allocator
+- [ ] Dynamic allocator
+- [ ] Pool allocator
+- [ ] System manager & interface
+- [ ] Multithreading
+- [ ] Job system
+- [X] Resource system
+  - [X] Binary resource loader
+  - [X] Text resource loader
+  - [X] Image resource loader
+  - [X] Material resource loader
+  - [ ] Bitmap font resource loader
+  - [ ] System font resource loader
+  - [ ] Scene resource loader
+- [ ] Texture format (binary)
+- [ ] Texture format conversion tool
+- [ ] Resource hot-reloading
+- [ ] Entity Component System (ECS)
+- [ ] Scenes
+  - [ ] Scene format
+  - [ ] Scene load/save procedures
+- [ ] Prefabs
+- [ ] Raycasting
+- [ ] Object picking
+- [ ] Gizmos
+- [ ] Editor (world)
+- [ ] Audio
+- [ ] Physics
+- [ ] Networking
+- [ ] Profiling
+- [ ] Game/editor logic hot-reloading
+- [ ] Keymaps/keybindings
+- [ ] Configurable global settings
+- [ ] Configurable engine settings
+- [ ] Timeline system
+- [ ] Skeletal animation system
+- [ ] Terrain
+- [ ] Skybox & skysphere
+
+**** Renderer
+
+- [X] Renderer front/backend architecture
+- [X] Vulkan API backend support
+- [ ] OpenGL API backend support
+- [ ] Direct3D API backend support
+- [ ] Metal API backend support
+- [X] Textures
+- [X] Geometry
+- [X] Materials (basic)
+- [ ] Materials (advanced)
+- [X] Render targets/textures support
+- [ ] 2D/3D geometry generation
+- [X] Multiple renderpass support
+- [ ] Configurable renderpasses
+- [ ] Phong reflection/lighting model
+- [ ] Specular maps
+- [ ] Normal maps
+- [ ] Physically Based Rendering (PBR)
+- [ ] Multithreading support for Vulkan renderer
+- [ ] Multithreading support for D3D12 renderer
+- [ ] 2D/3D batch rendering
+
+**** UI
+
+- [ ] UI system
+- [ ] Layering
+- [ ] UI file format
+- [ ] Load/save procedures
+- [ ] Editor (UI)
+- [ ] Control focus (TAB-ing)
+- [ ] Docking
+- [ ] Drag-and-Drop support
+- [ ] UI controls
+  - [ ] Base (show/hide, position)
+  - [ ] Panel
+  - [ ] Image box
+  - [ ] Viewport
+  - [ ] Text (basic)
+  - [ ] Text (rich)
+  - [ ] Button
+  - [ ] Checkbox
+  - [ ] Radio button
+  - [ ] Tab
+  - [ ] Window/modal
+  - [ ] Resizable multi-panel
+  - [ ] Scrollbar
+  - [ ] Scroll container
+  - [ ] Textbox/textarea
+
+**** Miscellany
+
+- [X] README-type documentation
+- [ ] White paper
+- [ ] Reference Manual
+  - [ ] Info
+  - [ ] HTML
+  - [ ] PostScript
+  - [ ] gzipped PostScript
+  - [ ] PDF
+- [ ] API auto-generated code documentation
+  - [ ] Man
+  - [ ] HTML
+  - [ ] PostScript
+  - [ ] gzipped PostScript
+  - [ ] PDF
 
 ** Engine architecture
 

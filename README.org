@@ -100,76 +100,72 @@ mindmap
 
 **** General
 
-|             Feature              | Status |            Feature            | Status |             Feature             | Status |
-|               <c>                |  <c>   |              <c>              |  <c>   |               <c>               |  <c>   |
+| Feature                          | Status | Feature                       | Status | Feature                         | Status |
 |----------------------------------+--------+-------------------------------+--------+---------------------------------+--------|
-|          Platform layer          |   ✅   |       Keyboard support        |   ✅   | Texture format conversion tool  |   ❌   |
-|    Desktop GNU/Linux support     |   ✅   |         Mouse support         |   ❌   |     Resource hot-reloading      |   ❌   |
-|     Desktop Windows support      |   ❌   |        Gamepad support        |   ❌   |  Entity Component System (ECS)  |   ❌   |
-|      Desktop macOS support       |   ❌   |  Touchscreen/mobile support   |   ❌   |             Scenes              |   ❌   |
-| Mobile Android support (runtime) |   ❌   |    String library (basic)     |   ✅   |          Scene format           |   ❌   |
-|   Mobile iOS support (runtime)   |   ❌   | String library (struct based) |   ❌   |   Scene load/save procedures    |   ❌   |
-|          Dynamic array           |   ✅   |         Math library          |   ✅   |             Prefabs             |   ❌   |
-|            Free list             |   ❌   | SIMD support for math library |   ❌   |           Raycasting            |   ❌   |
-|            Hash table            |   ✅   |       Linear allocator        |   ✅   |         Object picking          |   ❌   |
-|              Stack               |   ❌   |       Dynamic allocator       |   ❌   |             Gizmos              |   ❌   |
-|              Queue               |   ❌   |        Pool allocator         |   ❌   |         Editor (world)          |   ❌   |
-|               Ring               |   ❌   |  System manager & interface   |   ❌   |              Audio              |   ❌   |
-|               Pool               |   ❌   |        Multithreading         |   ❌   |             Physics             |   ❌   |
-|     Binary Search Tree (BST)     |   ❌   |          Job system           |   ❌   |           Networking            |   ❌   |
-|          Logger (basic)          |   ✅   |        Resource system        |   ✅   |            Profiling            |   ❌   |
-|      Multithreaded logging       |   ❌   |    Binary resource loader     |   ✅   | Game/editor logic hot-reloading |   ❌   |
-|     Logger channel grouping      |   ❌   |     Text resource loader      |   ✅   |       Keymaps/keybindings       |   ❌   |
-|          Clock (basic)           |   ✅   |     Image resource loader     |   ✅   |  Configurable global settings   |   ❌   |
-|         Clock (advanced)         |   ❌   |   Material resource loader    |   ✅   |  Configurable engine settings   |   ❌   |
-|          Events (basic)          |   ✅   |  Bitmap font resource loader  |   ❌   |         Timeline system         |   ❌   |
-|         Event broadcast          |   ❌   |  System font resource loader  |   ❌   |    Skeletal animation system    |   ❌   |
-|          Event polling           |   ❌   |     Scene resource loader     |   ❌   |             Terrain             |   ❌   |
-|       Multithreaded events       |   ❌   |    Texture format (binary)    |   ❌   |       Skybox & skysphere        |   ❌   |
+| Platform layer                   | ✅     | Keyboard support              | ✅     | Texture format conversion tool  | ❌     |
+| Desktop GNU/Linux support        | ✅     | Mouse support                 | ❌     | Resource hot-reloading          | ❌     |
+| Desktop Windows support          | ❌     | Gamepad support               | ❌     | Entity Component System (ECS)   | ❌     |
+| Desktop macOS support            | ❌     | Touchscreen/mobile support    | ❌     | Scenes                          | ❌     |
+| Mobile Android support (runtime) | ❌     | String library (basic)        | ✅     | Scene format                    | ❌     |
+| Mobile iOS support (runtime)     | ❌     | String library (struct based) | ❌     | Scene load/save procedures      | ❌     |
+| Dynamic array                    | ✅     | Math library                  | ✅     | Prefabs                         | ❌     |
+| Free list                        | ❌     | SIMD support for math library | ❌     | Raycasting                      | ❌     |
+| Hash table                       | ✅     | Linear allocator              | ✅     | Object picking                  | ❌     |
+| Stack                            | ❌     | Dynamic allocator             | ❌     | Gizmos                          | ❌     |
+| Queue                            | ❌     | Pool allocator                | ❌     | Editor (world)                  | ❌     |
+| Ring                             | ❌     | System manager & interface    | ❌     | Audio                           | ❌     |
+| Pool                             | ❌     | Multithreading                | ❌     | Physics                         | ❌     |
+| Binary Search Tree (BST)         | ❌     | Job system                    | ❌     | Networking                      | ❌     |
+| Logger (basic)                   | ✅     | Resource system               | ✅     | Profiling                       | ❌     |
+| Multithreaded logging            | ❌     | Binary resource loader        | ✅     | Game/editor logic hot-reloading | ❌     |
+| Logger channel grouping          | ❌     | Text resource loader          | ✅     | Keymaps/keybindings             | ❌     |
+| Clock (basic)                    | ✅     | Image resource loader         | ✅     | Configurable global settings    | ❌     |
+| Clock (advanced)                 | ❌     | Material resource loader      | ✅     | Configurable engine settings    | ❌     |
+| Events (basic)                   | ✅     | Bitmap font resource loader   | ❌     | Timeline system                 | ❌     |
+| Event broadcast                  | ❌     | System font resource loader   | ❌     | Skeletal animation system       | ❌     |
+| Event polling                    | ❌     | Scene resource loader         | ❌     | Terrain                         | ❌     |
+| Multithreaded events             | ❌     | Texture format (binary)       | ❌     | Skybox & skysphere              | ❌     |
 
 **** Renderer
 
-|               Feature               | Status |                  Feature                   | Status |
-|                 <c>                 |  <c>   |                    <c>                     |  <c>   |
+| Feature                             | Status | Feature                                    | Status |
 |-------------------------------------+--------+--------------------------------------------+--------|
-| Renderer front/backend architecture |   ✅   |         2D/3D geometry generation          |   ❌   |
-|     Vulkan API backend support      |   ✅   |        Multiple renderpass support         |   ✅   |
-|     OpenGL API backend support      |   ❌   |         Configurable renderpasses          |   ❌   |
-|    Direct3D API backend support     |   ❌   |      Phong reflection/lighting model       |   ❌   |
-|      Metal API backend support      |   ❌   |               Specular maps                |   ❌   |
-|              Textures               |   ✅   |                Normal maps                 |   ❌   |
-|              Geometry               |   ✅   |      Physically Based Rendering (PBR)      |   ❌   |
-|          Materials (basic)          |   ✅   | Multithreading support for Vulkan renderer |   ❌   |
-|        Materials (advanced)         |   ❌   | Multithreading support for D3D12 renderer  |   ❌   |
-|   Render targets/textures support   |   ✅   |           2D/3D batch rendering            |   ❌   |
+| Renderer front/backend architecture | ✅     | 2D/3D geometry generation                  | ❌     |
+| Vulkan API backend support          | ✅     | Multiple renderpass support                | ✅     |
+| OpenGL API backend support          | ❌     | Configurable renderpasses                  | ❌     |
+| Direct3D API backend support        | ❌     | Phong reflection/lighting model            | ❌     |
+| Metal API backend support           | ❌     | Specular maps                              | ❌     |
+| Textures                            | ✅     | Normal maps                                | ❌     |
+| Geometry                            | ✅     | Physically Based Rendering (PBR)           | ❌     |
+| Materials (basic)                   | ✅     | Multithreading support for Vulkan renderer | ❌     |
+| Materials (advanced)                | ❌     | Multithreading support for D3D12 renderer  | ❌     |
+| Render targets/textures support     | ✅     | 2D/3D batch rendering                      | ❌     |
 
 **** UI
 
-|              Feature               | Status |            Feature            | Status |
-|                <c>                 |  <c>   |              <c>              |  <c>   |
+| Feature                            | Status | Feature                       | Status |
 |------------------------------------+--------+-------------------------------+--------|
-|             UI system              |   ❌   |     Text (basic) control      |   ❌   |
-|              Layering              |   ❌   |      Text (rich) control      |   ❌   |
-|           UI file format           |   ❌   |        Button control         |   ❌   |
-|        Load/save procedures        |   ❌   |       Checkbox control        |   ❌   |
-|            Editor (UI)             |   ❌   |     Radio button control      |   ❌   |
-|      Control focus (TAB-ing)       |   ❌   |          Tab control          |   ❌   |
-|              Docking               |   ❌   |     Window/modal control      |   ❌   |
-|       Drag-and-Drop support        |   ❌   | Resizable multi-panel control |   ❌   |
-| Base control (show/hide, position) |   ❌   |       Scrollbar control       |   ❌   |
-|           Panel control            |   ❌   |   Scroll container control    |   ❌   |
-|         Image box control          |   ❌   |   Textbox/textarea control    |   ❌   |
-|          Viewport control          |   ❌   | In-game debug console control |   ❌   |
+| UI system                          | ❌     | Text (basic) control          | ❌     |
+| Layering                           | ❌     | Text (rich) control           | ❌     |
+| UI file format                     | ❌     | Button control                | ❌     |
+| Load/save procedures               | ❌     | Checkbox control              | ❌     |
+| Editor (UI)                        | ❌     | Radio button control          | ❌     |
+| Control focus (TAB-ing)            | ❌     | Tab control                   | ❌     |
+| Docking                            | ❌     | Window/modal control          | ❌     |
+| Drag-and-Drop support              | ❌     | Resizable multi-panel control | ❌     |
+| Base control (show/hide, position) | ❌     | Scrollbar control             | ❌     |
+| Panel control                      | ❌     | Scroll container control      | ❌     |
+| Image box control                  | ❌     | Textbox/textarea control      | ❌     |
+| Viewport control                   | ❌     | In-game debug console control | ❌     |
 
 **** Miscellany
 
-|                              Feature                               | Status |
-|                                <c>                                 |  <c>   |
+| Feature                                                            | Status |
 |--------------------------------------------------------------------+--------|
-|                     README-type documentation                      |   ✅   |
-|                            White paper                             |   ❌   |
-|           Reference Manual (Info, HTML, PostScript, PDF)           |   ❌   |
-| API auto-generated code documentation (Man, HTML, PostScript, PDF) |   ❌   |
+| README-type documentation                                          | ✅     |
+| White paper                                                        | ❌     |
+| Reference Manual (Info, HTML, PostScript, PDF)                     | ❌     |
+| API auto-generated code documentation (Man, HTML, PostScript, PDF) | ❌     |
 
 ** Engine architecture
 

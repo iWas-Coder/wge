@@ -39,14 +39,22 @@ This program is distributed in the hope that it will be useful, but WITHOUT ANY 
   - [[#platform-support][Platform support]]
   - [[#tech-stack][Tech stack]]
   - [[#project-structure][Project structure]]
-  - [[#feature-list][Feature list]]
-  - [[#engine-architecture][Engine architecture]]
-  - [[#renderer][Renderer]]
-    - [[#architecture][Architecture]]
+  - [[#features][Features]]
+    - [[#high-level-product-features][High-level product features]]
+    - [[#feature-roadmap][Feature roadmap]]
+      - [[#general][General]]
+      - [[#renderer][Renderer]]
+      - [[#ui][UI]]
+      - [[#miscellany][Miscellany]]
+  - [[#architecture][Architecture]]
+  - [[#renderer-1][Renderer]]
+    - [[#architecture-1][Architecture]]
     - [[#lifecycle][Lifecycle]]
     - [[#phases][Phases]]
     - [[#graphics-pipeline][Graphics pipeline]]
-    - [[#shader-modules][Shader modules]]
+      - [[#shader-modules][Shader modules]]
+      - [[#vertex-shader][Vertex shader]]
+      - [[#fragment-shader][Fragment shader]]
 - [[#build][Build]]
 - [[#usage][Usage]]
 
@@ -73,11 +81,13 @@ mindmap
     ("Editor (exec)")
 #+end_src
 
-** Feature list
+** Features
+
+*** High-level product features
 
 - Lightweight build system (GNU Make)
 - Low-level utilities (dynamic arrays, string handling, etc.)
-- Platform layer (Linux and Windows abstractions for windowing, input, console interaction, etc.)
+- Platform layer (OS-based abstractions for windowing, input, console interaction, etc.)
 - Logger (debugging purposes)
 - File I/O capabilities
 - Application layer
@@ -88,7 +98,78 @@ mindmap
 - Scripts support via hot-realoadable modules
 - Physics system
 
-** Engine architecture
+*** Feature roadmap
+
+**** General
+
+| Feature                          | Status | Feature                       | Status | Feature                         | Status |
+|----------------------------------+--------+-------------------------------+--------+---------------------------------+--------|
+| Platform layer                   | ✅     | Keyboard support              | ✅     | Texture format conversion tool  | ❌     |
+| Desktop GNU/Linux support        | ✅     | Mouse support                 | ❌     | Resource hot-reloading          | ❌     |
+| Desktop Windows support          | ❌     | Gamepad support               | ❌     | Entity Component System (ECS)   | ❌     |
+| Desktop macOS support            | ❌     | Touchscreen/mobile support    | ❌     | Scenes                          | ❌     |
+| Mobile Android support (runtime) | ❌     | String library (basic)        | ✅     | Scene format                    | ❌     |
+| Mobile iOS support (runtime)     | ❌     | String library (struct based) | ❌     | Scene load/save procedures      | ❌     |
+| Dynamic array                    | ✅     | Math library                  | ✅     | Prefabs                         | ❌     |
+| Free list                        | ❌     | SIMD support for math library | ❌     | Raycasting                      | ❌     |
+| Hash table                       | ✅     | Linear allocator              | ✅     | Object picking                  | ❌     |
+| Stack                            | ❌     | Dynamic allocator             | ❌     | Gizmos                          | ❌     |
+| Queue                            | ❌     | Pool allocator                | ❌     | Editor (world)                  | ❌     |
+| Ring                             | ❌     | System manager & interface    | ❌     | Audio                           | ❌     |
+| Pool                             | ❌     | Multithreading                | ❌     | Physics                         | ❌     |
+| Binary Search Tree (BST)         | ❌     | Job system                    | ❌     | Networking                      | ❌     |
+| Logger (basic)                   | ✅     | Resource system               | ✅     | Profiling                       | ❌     |
+| Multithreaded logging            | ❌     | Binary resource loader        | ✅     | Game/editor logic hot-reloading | ❌     |
+| Logger channel grouping          | ❌     | Text resource loader          | ✅     | Keymaps/keybindings             | ❌     |
+| Clock (basic)                    | ✅     | Image resource loader         | ✅     | Configurable global settings    | ❌     |
+| Clock (advanced)                 | ❌     | Material resource loader      | ✅     | Configurable engine settings    | ❌     |
+| Events (basic)                   | ✅     | Bitmap font resource loader   | ❌     | Timeline system                 | ❌     |
+| Event broadcast                  | ❌     | System font resource loader   | ❌     | Skeletal animation system       | ❌     |
+| Event polling                    | ❌     | Scene resource loader         | ❌     | Terrain                         | ❌     |
+| Multithreaded events             | ❌     | Texture format (binary)       | ❌     | Skybox & skysphere              | ❌     |
+
+**** Renderer
+
+| Feature                             | Status | Feature                                    | Status |
+|-------------------------------------+--------+--------------------------------------------+--------|
+| Renderer front/backend architecture | ✅     | 2D/3D geometry generation                  | ❌     |
+| Vulkan API backend support          | ✅     | Multiple renderpass support                | ✅     |
+| OpenGL API backend support          | ❌     | Configurable renderpasses                  | ❌     |
+| Direct3D API backend support        | ❌     | Phong reflection/lighting model            | ❌     |
+| Metal API backend support           | ❌     | Specular maps                              | ❌     |
+| Textures                            | ✅     | Normal maps                                | ❌     |
+| Geometry                            | ✅     | Physically Based Rendering (PBR)           | ❌     |
+| Materials (basic)                   | ✅     | Multithreading support for Vulkan renderer | ❌     |
+| Materials (advanced)                | ❌     | Multithreading support for D3D12 renderer  | ❌     |
+| Render targets/textures support     | ✅     | 2D/3D batch rendering                      | ❌     |
+
+**** UI
+
+| Feature                            | Status | Feature                       | Status |
+|------------------------------------+--------+-------------------------------+--------|
+| UI system                          | ❌     | Text (basic) control          | ❌     |
+| Layering                           | ❌     | Text (rich) control           | ❌     |
+| UI file format                     | ❌     | Button control                | ❌     |
+| Load/save procedures               | ❌     | Checkbox control              | ❌     |
+| Editor (UI)                        | ❌     | Radio button control          | ❌     |
+| Control focus (TAB-ing)            | ❌     | Tab control                   | ❌     |
+| Docking                            | ❌     | Window/modal control          | ❌     |
+| Drag-and-Drop support              | ❌     | Resizable multi-panel control | ❌     |
+| Base control (show/hide, position) | ❌     | Scrollbar control             | ❌     |
+| Panel control                      | ❌     | Scroll container control      | ❌     |
+| Image box control                  | ❌     | Textbox/textarea control      | ❌     |
+| Viewport control                   | ❌     | In-game debug console control | ❌     |
+
+**** Miscellany
+
+| Feature                                                            | Status |
+|--------------------------------------------------------------------+--------|
+| README-type documentation                                          | ✅     |
+| White paper                                                        | ❌     |
+| Reference Manual (Info, HTML, PostScript, PDF)                     | ❌     |
+| API auto-generated code documentation (Man, HTML, PostScript, PDF) | ❌     |
+
+** Architecture
 
 #+CAPTION: Engine architecture diagram
 [[assets/engine-arch-diagram.png]]
@@ -99,21 +180,78 @@ mindmap
 
 *** Architecture
 
+#+CAPTION: Renderer architecture diagram
+[[assets/renderer-arch-diagram.png]]
+
 (...)
 
 *** Lifecycle
+
+#+begin_src mermaid
+flowchart TB
+  A[Initialization] --> B[Prepare frame]
+  B --> C[Set state on GPU]
+  C --> D[Present to screen]
+  D --> E{Still running?}
+  E --> |Yes| B
+  E --> |No| F[Shutdown]
+#+end_src
 
 (...)
 
 *** Phases
 
-(...)
+- *Phase 0:*
+  - Graphics API instantiation
+  - Clear screen to solid color
+- *Phase 1:*
+  - Static meshes
+  - Textures
+  - Materials
+  - Phong reflection model (basic lighting)
+- *Phase 2:*
+  - Render targets/textures
+  - Terrain
+  - Skybox
+  - Water
+- *Phase 3:*
+  - Post FX
+  - Pipeline (configurable)
+- *Phase 4:*
+  - Physically Based Rendering (PBR) (advanced lighting)
 
 *** Graphics pipeline
 
+#+begin_src mermaid
+flowchart TB
+  A[Vertex & Index Buffers] --> |Input Assembler| B[Vertex Shader]
+  B --> C[Tessellation]
+  C --> D[Geometry Shader]
+  D --> |Rasterization| E[Fragment Shader]
+  E --> |Color Blending| F[Framebuffer]
+#+end_src
+
 (...)
 
-*** Shader modules
+**** Shader modules
+
+#+begin_src mermaid
+flowchart TB
+  A[SPIR-V]
+  B[GLSL] --> A
+  C[HLSL] --> A
+#+end_src
+
+(...)
+
+**** Vertex shader
+
+#+CAPTION: Renderer vertex shader coordinates transformations
+[[assets/renderer-vertex-shader-coordinates.png]]
+
+(...)
+
+**** Fragment shader
 
 (...)
 

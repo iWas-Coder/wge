@@ -201,23 +201,23 @@ flowchart TB
 
 *** Phases
 
-- **Phase 0:**
+- *Phase 0:*
   - Graphics API instantiation
   - Clear screen to solid color
-- **Phase 1:**
+- *Phase 1:*
   - Static meshes
   - Textures
   - Materials
   - Phong reflection model (basic lighting)
-- **Phase 2:**
+- *Phase 2:*
   - Render targets/textures
   - Terrain
   - Skybox
   - Water
-- **Phase 3:**
+- *Phase 3:*
   - Post FX
   - Pipeline (configurable)
-- **Phase 4:**
+- *Phase 4:*
   - Physically Based Rendering (PBR) (advanced lighting)
 
 *** Graphics pipeline

@@ -23,6 +23,7 @@
 #include <kmemory.h>
 #include <kstring.h>
 #include <image_loader.h>
+#include <loader_utils.h>
 #include <resource_types.h>
 
 #define STB_IMAGE_IMPLEMENTATION
@@ -85,18 +86,8 @@ b8 image_loader_load(resource_loader *self, const char *name, resource *out_reso
 }
 
 void image_loader_unload(resource_loader *self, resource *resource) {
-  if (!self || !resource) {
+  if (!resource_unload(self, resource, MEMORY_TAG_TEXTURE)) {
     KWARN("image_loader_unload :: `self` and `resource` are required");
-    return;
-  }
-  if (kstrlen(resource->full_path)) kfree(resource->full_path,
-                                         sizeof(char) * kstrlen(resource->full_path) + 1,
-                                         MEMORY_TAG_STRING);
-  if (resource->data) {
-    kfree(resource->data, resource->data_size, MEMORY_TAG_TEXTURE);
-    resource->data = 0;
-    resource->data_size = 0;
-    resource->loader_id = INVALID_ID;
   }
 }
 

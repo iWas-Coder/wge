@@ -25,6 +25,7 @@
 #include <kstring.h>
 #include <filesystem.h>
 #include <text_loader.h>
+#include <loader_utils.h>
 #include <resource_types.h>
 
 #define FILE_PATH_SIZE 512
@@ -40,19 +41,22 @@ b8 text_loader_load(resource_loader *self, const char *name, resource *out_resou
           self->type_path,
           name,
           "");
-  out_resource->full_path = kstrdup(full_file_path);
 
   file_handle fd;
   if (!filesystem_open(full_file_path, FILE_MODE_READ, false, &fd)) {
     KERROR("text_loader_load :: unable to open file '%s'", full_file_path);
     return false;
   }
+
+  out_resource->full_path = kstrdup(full_file_path);
+
   u64 file_size = 0;
   if (!filesystem_sizeof(&fd, &file_size)) {
     KERROR("text_loader_load :: unable to read file '%s'", full_file_path);
     filesystem_close(&fd);
     return false;
   }
+
   char *resource_data = kallocate(sizeof(char) * file_size, MEMORY_TAG_ARRAY);
   u64 read_size = 0;
   if (!filesystem_read_text_all(&fd, resource_data, &read_size)) {
@@ -60,6 +64,7 @@ b8 text_loader_load(resource_loader *self, const char *name, resource *out_resou
     filesystem_close(&fd);
     return false;
   }
+
   filesystem_close(&fd);
 
   out_resource->data = resource_data;
@@ -69,18 +74,8 @@ b8 text_loader_load(resource_loader *self, const char *name, resource *out_resou
 }
 
 void text_loader_unload(resource_loader *self, resource *resource) {
-  if (!self || !resource) {
+  if (!resource_unload(self, resource, MEMORY_TAG_ARRAY)) {
     KWARN("text_loader_unload :: `self` and `resource` are required");
-    return;
-  }
-  if (kstrlen(resource->full_path)) kfree(resource->full_path,
-                                         sizeof(char) * kstrlen(resource->full_path) + 1,
-                                         MEMORY_TAG_STRING);
-  if (resource->data) {
-    kfree(resource->data, resource->data_size, MEMORY_TAG_ARRAY);
-    resource->data = 0;
-    resource->data_size = 0;
-    resource->loader_id = INVALID_ID;
   }
 }
 

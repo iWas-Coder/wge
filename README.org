@@ -46,13 +46,15 @@ This program is distributed in the hope that it will be useful, but WITHOUT ANY 
       - [[#renderer][Renderer]]
       - [[#ui][UI]]
       - [[#miscellany][Miscellany]]
-  - [[#engine-architecture][Engine architecture]]
+  - [[#architecture][Architecture]]
   - [[#renderer-1][Renderer]]
-    - [[#architecture][Architecture]]
+    - [[#architecture-1][Architecture]]
     - [[#lifecycle][Lifecycle]]
     - [[#phases][Phases]]
     - [[#graphics-pipeline][Graphics pipeline]]
-    - [[#shader-modules][Shader modules]]
+      - [[#shader-modules][Shader modules]]
+      - [[#vertex-shader][Vertex shader]]
+      - [[#fragment-shader][Fragment shader]]
 - [[#build][Build]]
 - [[#usage][Usage]]
 
@@ -167,7 +169,7 @@ mindmap
 | Reference Manual (Info, HTML, PostScript, PDF)                     | ❌     |
 | API auto-generated code documentation (Man, HTML, PostScript, PDF) | ❌     |
 
-** Engine architecture
+** Architecture
 
 #+CAPTION: Engine architecture diagram
 [[assets/engine-arch-diagram.png]]
@@ -178,21 +180,78 @@ mindmap
 
 *** Architecture
 
+#+CAPTION: Renderer architecture diagram
+[[assets/renderer-arch-diagram.png]]
+
 (...)
 
 *** Lifecycle
+
+#+begin_src mermaid
+flowchart TB
+  A[Initialization] --> B[Prepare frame]
+  B --> C[Set state on GPU]
+  C --> D[Present to screen]
+  D --> E{Still running?}
+  E --> |Yes| B
+  E --> |No| F[Shutdown]
+#+end_src
 
 (...)
 
 *** Phases
 
-(...)
+- **Phase 0:**
+  - Graphics API instantiation
+  - Clear screen to solid color
+- **Phase 1:**
+  - Static meshes
+  - Textures
+  - Materials
+  - Phong reflection model (basic lighting)
+- **Phase 2:**
+  - Render targets/textures
+  - Terrain
+  - Skybox
+  - Water
+- **Phase 3:**
+  - Post FX
+  - Pipeline (configurable)
+- **Phase 4:**
+  - Physically Based Rendering (PBR) (advanced lighting)
 
 *** Graphics pipeline
 
+#+begin_src mermaid
+flowchart TB
+  A[Vertex & Index Buffers] --> |Input Assembler| B[Vertex Shader]
+  B --> C[Tessellation]
+  C --> D[Geometry Shader]
+  D --> |Rasterization| E[Fragment Shader]
+  E --> |Color Blending| F[Framebuffer]
+#+end_src
+
 (...)
 
-*** Shader modules
+**** Shader modules
+
+#+begin_src mermaid
+flowchart TB
+  A[SPIR-V]
+  B[GLSL] --> A
+  C[HLSL] --> A
+#+end_src
+
+(...)
+
+**** Vertex shader
+
+#+CAPTION: Renderer vertex shader coordinates transformations
+[[assets/renderer-vertex-shader-coordinates.png]]
+
+(...)
+
+**** Fragment shader
 
 (...)
 

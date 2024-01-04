@@ -99,7 +99,7 @@ void kstrsub(char *dest, const char *src, u64 start, u64 len) {
   }
   if (len > 0) {
     for (u64 i = start, j = 0; j < len && src[i]; ++i, ++j) dest[j] = src[i];
-    dest[start + len] = 0;
+    dest[len] = 0;
   }
   else {
     u64 j = 0;

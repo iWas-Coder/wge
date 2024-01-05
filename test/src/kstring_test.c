@@ -129,6 +129,110 @@ u8 kstring_test_kstrrm(void) {
   return true;
 }
 
+u8 kstring_test_str_to_vec4(void) {
+  Vector4 v;
+  should_be_true(str_to_vec4("1.0 2.0 3.0 4.0", &v));
+  float_should_be(1.0f, v.x);
+  float_should_be(2.0f, v.y);
+  float_should_be(3.0f, v.z);
+  float_should_be(4.0f, v.w);
+  return true;
+}
+
+u8 kstring_test_str_to_vec3(void) {
+  Vector3 v;
+  should_be_true(str_to_vec3("1.0 2.0 3.0", &v));
+  float_should_be(1.0f, v.x);
+  float_should_be(2.0f, v.y);
+  float_should_be(3.0f, v.z);
+  return true;
+}
+
+u8 kstring_test_str_to_vec2(void) {
+  Vector2 v;
+  should_be_true(str_to_vec2("1.0 2.0", &v));
+  float_should_be(1.0f, v.x);
+  float_should_be(2.0f, v.y);
+  return true;
+}
+
+u8 kstring_test_str_to_f32(void) {
+  f32 f;
+  should_be_true(str_to_f32("1.0", &f));
+  float_should_be(1.0f, f);
+  return true;
+}
+
+u8 kstring_test_str_to_f64(void) {
+  f64 f;
+  should_be_true(str_to_f64("1.0", &f));
+  float_should_be(1.0f, f);
+  return true;
+}
+
+u8 kstring_test_str_to_i8(void) {
+  i8 i;
+  should_be_true(str_to_i8("1", &i));
+  should_be(1, i);
+  return true;
+}
+
+u8 kstring_test_str_to_i16(void) {
+  i16 i;
+  should_be_true(str_to_i16("1", &i));
+  should_be(1, i);
+  return true;
+}
+
+u8 kstring_test_str_to_i32(void) {
+  i32 i;
+  should_be_true(str_to_i32("1", &i));
+  should_be(1, i);
+  return true;
+}
+
+u8 kstring_test_str_to_i64(void) {
+  i64 i;
+  should_be_true(str_to_i64("1", &i));
+  should_be(1, i);
+  return true;
+}
+
+u8 kstring_test_str_to_u8(void) {
+  u8 i;
+  should_be_true(str_to_u8("1", &i));
+  should_be(1, i);
+  return true;
+}
+
+u8 kstring_test_str_to_u16(void) {
+  u16 i;
+  should_be_true(str_to_u16("1", &i));
+  should_be(1, i);
+  return true;
+}
+
+u8 kstring_test_str_to_u32(void) {
+  u32 i;
+  should_be_true(str_to_u32("1", &i));
+  should_be(1, i);
+  return true;
+}
+
+u8 kstring_test_str_to_u64(void) {
+  u64 i;
+  should_be_true(str_to_u64("1", &i));
+  should_be(1, i);
+  return true;
+}
+
+u8 kstring_test_str_to_bool(void) {
+  b8 b;
+  should_be_true(str_to_bool("true", &b));
+  should_be(true, b);
+  return true;
+}
+
 void kstring_test_register(void) {
   REGISTER_TEST(kstring_test_kstrlen);
   REGISTER_TEST(kstring_test_kstrdup);
@@ -143,4 +247,18 @@ void kstring_test_register(void) {
   REGISTER_TEST(kstring_test_kstrsub_end);
   REGISTER_TEST(kstring_test_kstridx);
   REGISTER_TEST(kstring_test_kstrrm);
+  REGISTER_TEST(kstring_test_str_to_vec4);
+  REGISTER_TEST(kstring_test_str_to_vec3);
+  REGISTER_TEST(kstring_test_str_to_vec2);
+  REGISTER_TEST(kstring_test_str_to_f32);
+  REGISTER_TEST(kstring_test_str_to_f64);
+  REGISTER_TEST(kstring_test_str_to_i8);
+  REGISTER_TEST(kstring_test_str_to_i16);
+  REGISTER_TEST(kstring_test_str_to_i32);
+  REGISTER_TEST(kstring_test_str_to_i64);
+  REGISTER_TEST(kstring_test_str_to_u8);
+  REGISTER_TEST(kstring_test_str_to_u16);
+  REGISTER_TEST(kstring_test_str_to_u32);
+  REGISTER_TEST(kstring_test_str_to_u64);
+  REGISTER_TEST(kstring_test_str_to_bool);
 }

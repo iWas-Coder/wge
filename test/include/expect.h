@@ -60,6 +60,18 @@
     }                                                           \
   }
 
+#define float_should_not_be(expected, actual)                   \
+  {                                                             \
+    if (kabs(expected - actual) <= 0.001f) {                     \
+      KERROR("%s:%d :: FAILED -> got '%f', expected '%f'",      \
+             __FILE__,                                          \
+             __LINE__,                                          \
+             actual,                                            \
+             expected);                                         \
+      return false;                                             \
+    }                                                           \
+  }
+
 #define should_be_true(actual)                                  \
   {                                                             \
     if (actual != true) {                                        \

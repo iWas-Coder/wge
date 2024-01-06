@@ -10,21 +10,9 @@
 ---
 **Dependencies:**
 - (...)
-
-### Development and testing equipment
-
-**Development PC specs:**
-- **CPU:** (...)
-- **RAM:** (...)
-- **GPU:** (...)
-- **OS:** (...)
-- **Glibc version:** (...)
-- **GCC version:** (...)
-- **Vulkan version:** (...)
 ---
-**Please, describe the tests that you ran to verify your changes. Provide instructions so it can be reproducible. Also list any relevant details for your test configuration.**
-
-(...)
+**Tests:**
+- (...)
 
 ## Type of change
 

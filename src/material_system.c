@@ -214,9 +214,11 @@ material *material_system_get_from_cfg(material_config cfg) {
            cfg.name,
            ref.ref_count);
   }
-  else KTRACE("Material '%s' already exists. `ref_count` -> %i",
-              cfg.name,
-              ref.ref_count);
+  else {
+    KTRACE("Material '%s' already exists. `ref_count` -> %i",
+           cfg.name,
+           ref.ref_count);
+  }
   // Update entry
   hash_table_set(&state_ptr->registered_material_table, cfg.name, &ref);
   return &state_ptr->registered_materials[ref.handle];
@@ -245,10 +247,12 @@ void material_system_release(const char *name) {
     ref.auto_release = false;
     KTRACE("Material '%s' released (`ref_count` -> 0 && `auto_release` -> true)", name);
   }
-  else KTRACE("Material '%s' released (`ref_count` -> %i && `auto_release` -> %s)",
-              name,
-              ref.ref_count,
-              ref.auto_release ? "true" : "false");
+  else {
+    KTRACE("Material '%s' released (`ref_count` -> %i && `auto_release` -> %s)",
+           name,
+           ref.ref_count,
+           ref.auto_release ? "true" : "false");
+  }
   // Update entry
   hash_table_set(&state_ptr->registered_material_table, name, &ref);
 }

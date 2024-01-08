@@ -3,10 +3,11 @@ build/
 
 *.so
 *.yaml
+.config
 .clangd
 TAGS
 compile_commands.json
-cli/*cli*
 test/test
+cli/*cli*
 
 !.github/**/*.yaml

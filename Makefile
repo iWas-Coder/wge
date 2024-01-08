@@ -33,18 +33,26 @@ NAME = Greased Wildebeest
 #   - If Git repo is present => '-git+<COMMIT_HASH>'
 #   - If not                 => '-dev'
 ifndef EXTRAVERSION
+  IS_GIT = yes
   EXTRAVERSION += $(or $(and $(wildcard .git/), -git+$$(git rev-parse --short HEAD)), -dev)
 endif
 # Version formatting
-ifeq ($(SUBLEVEL), 0)
-  FULL_VERSION = $(VERSION).$(PATCHLEVEL)$(EXTRAVERSION)
+ifdef IS_GIT
+  ifeq ($(SUBLEVEL), 0)
+    DIST_VERSION = $(VERSION).$(PATCHLEVEL)
+  else
+    DIST_VERSION = $(VERSION).$(PATCHLEVEL).$(SUBLEVEL)
+  endif
+  FULL_VERSION = $(DIST_VERSION)$(EXTRAVERSION)
 else
-  FULL_VERSION = $(VERSION).$(PATCHLEVEL).$(SUBLEVEL)$(EXTRAVERSION)
+  DIST_VERSION = $(VERSION).$(PATCHLEVEL)$(EXTRAVERSION)
+  FULL_VERSION = $(DIST_VERSION)
 endif
 
 # Verbose control
 Q = @
 # Pretty Printing Output (PPO) [17C]
+PPO_OBJDUMP = OBJDUMP
 PPO_INSTALL = INSTALL
 PPO_MKDIR   = MKDIR
 PPO_CLEAN   = CLEAN
@@ -120,6 +128,7 @@ BUILD_DIR_WIN        = $(BUILD_DIR_PARENT)/windows
 TEST_BUILD_DIR_LINUX = $(BUILD_DIR_PARENT)/$(TEST_DIR)/linux
 TEST_BUILD_DIR_WIN   = $(BUILD_DIR_PARENT)/$(TEST_DIR)/windows
 SHADERS_BUILD_DIR    = $(BUILD_DIR_PARENT)/shaders
+DIST_BUILD_DIR       = $(BUILD_DIR_PARENT)/dist
 
 # Files
 ETAGS_XREF    = TAGS
@@ -199,6 +208,10 @@ TEST_OUT_LINUX = $(TEST_DIR)/test
 TEST_OUT_WIN   = $(TEST_DIR)/test.exe
 ### 'shaders' target output
 SHADERS_OUT = $(SHADERS_SPVS)
+### 'dist' target output
+DIST_ZIP    =
+DIST_TAR    = $(DIST_BUILD_DIR)/wge-$(DIST_VERSION)-$(TARGET)-$(ARCH).tar
+DIST_TAR_GZ = $(DIST_BUILD_DIR)/wge-$(DIST_VERSION)-$(TARGET)-$(ARCH).tar.gz
 
 # Build targets
 TGTS     = wge shaders
@@ -241,7 +254,11 @@ $(TEST_BUILD_DIR):
 	@mkdir -p $@
 
 $(SHADERS_BUILD_DIR):
-	@printf "  $(PPO_MKDIR)   $@"
+	@echo "  $(PPO_MKDIR)   $@"
+	@mkdir -p $@
+
+$(DIST_BUILD_DIR):
+	@echo "  $(PPO_MKDIR)   $@"
 	@mkdir -p $@
 # **************************************************** #
 
@@ -338,26 +355,34 @@ $(SHADERS_BUILD_DIR)/%.frag.spv: $(SHADERS_DIR)/%.frag.glsl
 	@$(GLSL_CC) -fshader-stage=frag $< -o $@
 # **************************************************** #
 
+# ******************** 'install' ********************* #
 install:
 	$(warning This functionality is not implemented yet (dry run).)
-	@echo "  $(PPO_MKDIR)   $(PREFIX)/$(HDR_DIR)/wge-$(FULL_VERSION)"
+	@echo "  $(PPO_MKDIR)   $(PREFIX)/$(HDR_DIR)/wge-$(DIST_VERSION)"
 	@echo "  $(PPO_LN)      $(PREFIX)/$(HDR_DIR)/wge"
 	@for i in $$(find $(HDR_DIR) -type f); do \
 	  echo "  $(PPO_INSTALL) $$i";            \
 	done
 	@echo "  $(PPO_INSTALL) $(WGE_OUT)"
+# **************************************************** #
 
-dist:
-	$(warning This functionality is not implemented yet (dry run).)
-	@echo 
+# ********************** 'dist' ********************** #
+dist: $(DIST_BUILD_DIR) $(DIST_TAR_GZ)
+	@:
 
-	@echo "Files selected:"
-	@echo "  + $(WGE_OUT)"
-	@echo "  + $(HDR_DIR)/*"
-	@echo "  + $(SHADERS_BUILD_DIR)/*"
-	@echo "Generated:"
-	@echo "  => wge-$(FULL_VERSION)-$(TARGET)-$(ARCH).tar.gz"
-	@echo "  => wge-$(FULL_VERSION)-$(TARGET)-$(ARCH).zip"
+$(DIST_TAR_GZ): $(DIST_TAR)
+	@echo "  $(PPO_GZIP)    $@"
+	@gzip -f $<
+
+$(DIST_TAR): $(BUILD_DIR) $(WGE_OUT) $(SHADERS_BUILD_DIR) $(SHADERS_OUT)
+	@echo "  $(PPO_TAR)     $(WGE_OUT)"
+	@tar -rf $@ $(WGE_OUT)
+	@echo "  $(PPO_TAR)     $(HDR_DIR)"
+	@tar -rf $@ $(HDR_DIR)
+	@echo "  $(PPO_TAR)     $(SHADERS_BUILD_DIR)"
+	@tar -rf $@ $(SHADERS_BUILD_DIR)
+	@echo "  $(PPO_OBJDUMP) $@"
+# **************************************************** #
 
 clean:
 	@if [ -d $(BUILD_DIR_PARENT) ]; then           \

@@ -146,20 +146,21 @@ GLSL_CC = glslc
 CPPFLAGS_COMMON = -I $(HDR_DIR) -I $(TEST_DIR)/$(HDR_DIR) -I $(VENDOR_DIR)
 ### DEBUG version
 ifndef RELEASE
-  CPP_MACROS_COMMON   = -DKEXPORT -D_DEBUG
+  CPP_MACROS_COMMON = -DKEXPORT -D_DEBUG
   define CFLAGS_COMMON
     -std=$(CSTD)                    \
     -Wall -Wextra -pedantic -Werror \
     -fanalyzer                      \
+    -fsanitize=address,undefined    \
     -ggdb                           \
     -Og
   endef
   LDFLAGS_COMMON      = -Wl,--build-id -shared
-  LDFLAGS_COMMON_TEST = -Wl,--build-id
+  LDFLAGS_COMMON_TEST = -Wl,--build-id -L . -lasan -lubsan -lwge
 ### RELEASE version
 else
-  RELEASE_OPTS        = -O3 -fipa-pta -fuse-linker-plugin -flto=auto
-  CPP_MACROS_COMMON   = -DKEXPORT
+  RELEASE_OPTS      = -O0 -fipa-pta -fuse-linker-plugin -flto=auto
+  CPP_MACROS_COMMON = -DKEXPORT
   define CFLAGS_COMMON
     -std=$(CSTD)                    \
     -Wall -Wextra -pedantic -Werror \
@@ -170,7 +171,7 @@ else
     $(RELEASE_OPTS)
   endef
   LDFLAGS_COMMON      = -Wl,--build-id -shared -s $(RELEASE_OPTS)
-  LDFLAGS_COMMON_TEST = -Wl,--build-id -s $(RELEASE_OPTS)
+  LDFLAGS_COMMON_TEST = -Wl,--build-id -s $(RELEASE_OPTS) -L . -lwge
 endif
 ### Disable specific compiler warnings
 CFLAGS_COMMON += -Wno-gnu-zero-variadic-macro-arguments
@@ -183,7 +184,7 @@ CPPFLAGS_LINUX     = $(CPP_MACROS_LINUX) $(CPPFLAGS_COMMON)
 CFLAGS_LINUX       = $(CFLAGS_COMMON) -fPIC
 CFLAGS_LINUX_TEST  = $(CFLAGS_COMMON)
 LDFLAGS_LINUX      = $(LDFLAGS_COMMON)
-LDFLAGS_LINUX_TEST = $(LDFLAGS_COMMON_TEST) -L. -lwge -lxcb -lX11 -lX11-xcb -lvulkan
+LDFLAGS_LINUX_TEST = $(LDFLAGS_COMMON_TEST) -lxcb -lX11 -lX11-xcb -lvulkan
 
 # Build flags: Windows
 CC_WIN           = x86_64-w64-mingw32-gcc
@@ -192,7 +193,7 @@ CPPFLAGS_WIN     = $(CPP_MACROS_WIN) $(CPPFLAGS_COMMON) -I /usr/include
 CFLAGS_WIN       = $(CFLAGS_COMMON)
 CFLAGS_WIN_TEST  = $(CFLAGS_COMMON)
 LDFLAGS_WIN      = $(LDFLAGS_COMMON)
-LDFLAGS_WIN_TEST = $(LDFLAGS_COMMON_TEST) -L. -lwge -luser32 -lvulkan-1
+LDFLAGS_WIN_TEST = $(LDFLAGS_COMMON_TEST) -luser32 -lvulkan-1
 
 # Build configuration
 CFG_FILE = .config
@@ -216,7 +217,7 @@ DIST_TAR_GZ = $(DIST_BUILD_DIR)/wge-$(DIST_VERSION)-$(TARGET)-$(ARCH).tar.gz
 # Build targets
 TGTS     = wge shaders
 DIR_TGTS = $(BUILD_DIR) $(TEST_BUILD_DIR) $(SHADERS_BUILD_DIR)
-ALL_TGTS = $(TGTS) $(ETAGS_XREF)
+ALL_TGTS = $(ETAGS_XREF) $(TGTS)
 
 
 ###################
@@ -227,6 +228,7 @@ ALL_TGTS = $(TGTS) $(ETAGS_XREF)
 all: $(ALL_TGTS)
 	@:
 
+# *********************** main *********************** #
 wge: $(BUILD_DIR) $(DIFF_CFG) $(WGE_OUT)
 	@echo "Engine: $(WGE_OUT) is ready  ($(FULL_VERSION))"
 
@@ -235,6 +237,7 @@ check: $(TEST_BUILD_DIR) $(DIFF_CFG) $(TEST_OUT)
 
 shaders: $(SHADERS_BUILD_DIR) $(SHADERS_OUT)
 	@:
+# **************************************************** #
 
 # ********************** 'TAGS' ********************** #
 $(ETAGS_XREF): $(SRCS) $(HDRS)
@@ -363,7 +366,9 @@ install:
 	@for i in $$(find $(HDR_DIR) -type f); do \
 	  echo "  $(PPO_INSTALL) $$i";            \
 	done
-	@echo "  $(PPO_INSTALL) $(WGE_OUT)"
+	@echo "  $(PPO_INSTALL) $(PREFIX)/lib/$(WGE_OUT).$(DIST_VERSION)"
+	@echo "  $(PPO_LN)      $(PREFIX)/lib/$(WGE_OUT).$(VERSION)"
+	@echo "  $(PPO_LN)      $(PREFIX)/lib/$(WGE_OUT)"
 # **************************************************** #
 
 # ********************** 'dist' ********************** #
@@ -372,7 +377,7 @@ dist: $(DIST_BUILD_DIR) $(DIST_TAR_GZ)
 
 $(DIST_TAR_GZ): $(DIST_TAR)
 	@echo "  $(PPO_GZIP)    $@"
-	@gzip -f $<
+	@gzip -fk $<
 
 $(DIST_TAR): $(BUILD_DIR) $(WGE_OUT) $(SHADERS_BUILD_DIR) $(SHADERS_OUT)
 	@echo "  $(PPO_TAR)     $(WGE_OUT)"
@@ -384,6 +389,7 @@ $(DIST_TAR): $(BUILD_DIR) $(WGE_OUT) $(SHADERS_BUILD_DIR) $(SHADERS_OUT)
 	@echo "  $(PPO_OBJDUMP) $@"
 # **************************************************** #
 
+# ***************** 'clean/mrproper' ***************** #
 clean:
 	@if [ -d $(BUILD_DIR_PARENT) ]; then           \
 	  echo "  $(PPO_CLEAN)   $(BUILD_DIR_PARENT)"; \
@@ -397,6 +403,7 @@ mrproper: clean
 	    rm $$i;                      \
 	  fi                             \
 	done
+# **************************************************** #
 
 version:
 	@echo $(FULL_VERSION)

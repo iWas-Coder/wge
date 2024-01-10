@@ -11,13 +11,17 @@
 </p>
 #+end_html
 
-# Repository badges
+# Repository info badges
 #+begin_html
 <p align="center">
 <a href="https://www.gnu.org/licenses/gpl-3.0.html"><img src="https://img.shields.io/badge/License-GPLv3-blue.svg" alt="GNU GPL v3.0"></a>
 <a href="https://www.codefactor.io/repository/github/iwas-coder/wge"><img src="https://www.codefactor.io/repository/github/iwas-coder/wge/badge" alt="Code QA"></a>
+<a href=""><img src="https://tokei.rs/b1/github/iwas-coder/wge?category=code" alt="LoC">
+<a href=""><img src="https://tokei.rs/b1/github/iwas-coder/wge?category=files" alt="Files">
 </p>
 #+end_html
+
+# Repository workflow badges
 #+begin_html
 <p align="center">
 <a href="https://github.com/iWas-Coder/wge/actions/workflows/build-test.yaml"><img src="https://github.com/iWas-Coder/wge/actions/workflows/build-test.yaml/badge.svg" alt="WGE CI: Build & Test"></a>
@@ -28,6 +32,7 @@
 
 (...)
 
+# GNU GPLv3+ License notice
 #+BEGIN_QUOTE
 This work and all its documentation is licensed under the Creative Commons Attribution-ShareAlike 4.0 International (CC BY-SA 4.0) License. @@html:<br>@@
 This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version. @@html:<br>@@
@@ -55,7 +60,14 @@ This program is distributed in the hope that it will be useful, but WITHOUT ANY 
       - [[#shader-modules][Shader modules]]
       - [[#vertex-shader][Vertex shader]]
       - [[#fragment-shader][Fragment shader]]
-- [[#build][Build]]
+- [[#install-a-release][Install a release]]
+  - [[#archive-targz--zip][Archive (~.tar.gz~ || ~.zip~)]]
+  - [[#appimage][AppImage]]
+  - [[#flatpak][Flatpak]]
+  - [[#snap][Snap]]
+- [[#build-from-source][Build from source]]
+  - [[#get-the-code][Get the code]]
+  - [[#build][Build]]
 - [[#usage][Usage]]
 
 * Preliminary aspects
@@ -255,19 +267,45 @@ flowchart TB
 
 (...)
 
-* Build
+* Install a release
+
+(...)
+
+** Archive (~.tar.gz~ || ~.zip~)
+
+(...)
+
+** AppImage
+
+(...)
+
+** Flatpak
+
+(...)
+
+** Snap
+
+(...)
+
+* Build from source
+
+(...)
+
+** Get the code
 
 (...)
 
 #+begin_src sh
-$  git clone https://github.com/iWas-Coder/wge --recurse-submodules
+$  git clone --recurse-submodules https://github.com/iwas-coder/wge
 #+end_src
 (...)
 #+begin_src sh
-$  git clone https://github.com/iWas-Coder/wge && cd wge
+$  git clone https://github.com/iwas-coder/wge && cd wge
 $  git submodule init
 $  git submodule update
 #+end_src
+
+** Build
 
 WGE ships with a ready-to-go ~Makefile~, so *GNU Make* is needed in order to build the engine. It is as simple as doing:
 #+begin_src sh

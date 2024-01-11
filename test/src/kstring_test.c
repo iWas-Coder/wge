@@ -33,6 +33,7 @@ u8 kstring_test_kstrdup(void) {
   char *str = "hello, world!";
   char *str_cp = kstrdup(str);
   should_be_true(kstrcmp(str, str_cp));
+  kfree(str_cp, kstrlen(str_cp) + 1, MEMORY_TAG_STRING);
   return true;
 }
 

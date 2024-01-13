@@ -210,7 +210,7 @@ TEST_OUT_WIN   = $(TEST_DIR)/test.exe
 ### 'shaders' target output
 SHADERS_OUT = $(SHADERS_SPVS)
 ### 'dist' target output
-DIST_ZIP    =
+DIST_ZIP    = $(DIST_BUILD_DIR)/wge-$(DIST_VERSION)-$(TARGET)-$(ARCH).zip
 DIST_TAR    = $(DIST_BUILD_DIR)/wge-$(DIST_VERSION)-$(TARGET)-$(ARCH).tar
 DIST_TAR_GZ = $(DIST_BUILD_DIR)/wge-$(DIST_VERSION)-$(TARGET)-$(ARCH).tar.gz
 
@@ -261,6 +261,9 @@ $(SHADERS_BUILD_DIR):
 	@mkdir -p $@
 
 $(DIST_BUILD_DIR):
+	@if [ -z "$(RELEASE)" ]; then                                                       \
+	  $(error dist archives (.tar.gz && .zip) can only be built while in RELEASE mode); \
+	fi
 	@echo "  $(PPO_MKDIR)   $@"
 	@mkdir -p $@
 # **************************************************** #
@@ -372,7 +375,7 @@ install:
 # **************************************************** #
 
 # ********************** 'dist' ********************** #
-dist: $(DIST_BUILD_DIR) $(DIST_TAR_GZ)
+dist: $(DIST_BUILD_DIR) $(DIST_TAR_GZ) $(DIST_ZIP)
 	@:
 
 $(DIST_TAR_GZ): $(DIST_TAR)
@@ -380,12 +383,27 @@ $(DIST_TAR_GZ): $(DIST_TAR)
 	@gzip -fk $<
 
 $(DIST_TAR): $(BUILD_DIR) $(WGE_OUT) $(SHADERS_BUILD_DIR) $(SHADERS_OUT)
+	@if [ -z "$(RELEASE)" ]; then                                                       \
+	  $(error dist archives (.tar.gz && .zip) can only be built while in RELEASE mode); \
+	fi
 	@echo "  $(PPO_TAR)     $(WGE_OUT)"
 	@tar -rf $@ $(WGE_OUT)
 	@echo "  $(PPO_TAR)     $(HDR_DIR)"
 	@tar -rf $@ $(HDR_DIR)
 	@echo "  $(PPO_TAR)     $(SHADERS_BUILD_DIR)"
 	@tar -rf $@ $(SHADERS_BUILD_DIR)
+	@echo "  $(PPO_OBJDUMP) $@"
+
+$(DIST_ZIP): $(BUILD_DIR) $(WGE_OUT) $(SHADERS_BUILD_DIR) $(SHADERS_OUT)
+	@if [ -z "$(RELEASE)" ]; then                                                       \
+	  $(error dist archives (.tar.gz && .zip) can only be built while in RELEASE mode); \
+	fi
+	@echo "  $(PPO_ZIP)     $(WGE_OUT)"
+	@zip -u $@ $(WGE_OUT)
+	@echo "  $(PPO_ZIP)     $(HDR_DIR)"
+	@zip -ur $@ $(HDR_DIR)
+	@echo "  $(PPO_ZIP)     $(SHADERS_BUILD_DIR)"
+	@zip -ur $@ $(SHADERS_BUILD_DIR)
 	@echo "  $(PPO_OBJDUMP) $@"
 # **************************************************** #
 

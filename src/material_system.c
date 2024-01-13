@@ -75,6 +75,7 @@ b8 create_fallback_material(material_system_state *state) {
 b8 load_material(material_config cfg, material *m) {
   kzero_memory(m, sizeof(material));
   kstrncp(m->name, cfg.name, MATERIAL_NAME_MAX_LEN);
+  m->type = cfg.type;
   m->diffuse_color = cfg.diffuse_color;
   // Diffuse map
   if (kstrlen(cfg.diffuse_map_name)) {

@@ -49,10 +49,12 @@ b8 vulkan_renderer_backend_end_renderpass(renderer_backend *backend, u8 renderpa
 void vulkan_renderer_backend_draw_geometry(geometry_render_data data);
 
 b8 vulkan_renderer_backend_create_geometry(geometry *geometry,
+                                           u32 vertex_size,
                                            u32 vertex_count,
-                                           const vertex_3d *vertices,
+                                           const void *vertices,
+                                           u32 index_size,
                                            u32 index_count,
-                                           const u32 *indices);
+                                           const void *indices);
 
 void vulkan_renderer_backend_destroy_geometry(geometry *geometry);
 

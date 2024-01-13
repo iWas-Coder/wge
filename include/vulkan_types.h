@@ -155,10 +155,10 @@ typedef struct {
   u32 id;
   u32 generation;
   u32 vertex_count;
-  u32 vertex_size;
+  u32 vertex_element_size;
   u32 vertex_buffer_offset;
   u32 index_count;
-  u32 index_size;
+  u32 index_element_size;
   u32 index_buffer_offset;
 } vulkan_geometry_data;
 
@@ -171,9 +171,14 @@ typedef struct {
 
 typedef struct {
   Vector4 diffuse_color;
+  // 48 (16*3) bytes first section padding
   Vector4 padding0;
   Vector4 padding1;
   Vector4 padding2;
+  // 192 (64*3) bytes second section padding
+  Matrix4 padding3;
+  Matrix4 padding4;
+  Matrix4 padding5;
 } vulkan_material_shader_instance_ubo;
 
 typedef struct {
@@ -208,9 +213,14 @@ typedef struct {
 
 typedef struct {
   Vector4 diffuse_color;
+  // 48 (16*3) bytes first section padding
   Vector4 padding0;
   Vector4 padding1;
   Vector4 padding2;
+  // 192 (64*3) bytes second section padding
+  Matrix4 padding3;
+  Matrix4 padding4;
+  Matrix4 padding5;
 } vulkan_ui_shader_instance_ubo;
 
 typedef struct {
@@ -218,7 +228,7 @@ typedef struct {
   VkDescriptorPool global_descriptor_pool;
   VkDescriptorSetLayout global_descriptor_set_layout;
   VkDescriptorSet global_descriptor_sets[FRAME_DESCRIPTOR_COUNT];
-  vulkan_material_shader_global_ubo global_ubo;
+  vulkan_ui_shader_global_ubo global_ubo;
   vulkan_buffer global_uniform_buffer;
   VkDescriptorPool object_descriptor_pool;
   VkDescriptorSetLayout object_descriptor_set_layout;

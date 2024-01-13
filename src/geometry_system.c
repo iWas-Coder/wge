@@ -35,13 +35,15 @@ typedef struct {
 typedef struct {
   geometry_system_config config;
   geometry fallback_geometry;
+  geometry fallback_2D_geometry;
   geometry_ref *registered_geometries;
 } geometry_system_state;
 
 static geometry_system_state *state_ptr = 0;
 
-b8 create_fallback_geometry(geometry_system_state *state) {
+b8 create_fallback_geometries(geometry_system_state *state) {
   const f32 factor = 10.0f;
+
   vertex_3d vertex_list[] = {
     {
       .position.x = -0.5f * factor,
@@ -70,21 +72,66 @@ b8 create_fallback_geometry(geometry_system_state *state) {
   u32 index_list[] = {0, 1, 2, 0, 3, 1};
 
   if (!renderer_create_geometry(&state->fallback_geometry,
+                                sizeof(vertex_3d),
                                 4,
                                 vertex_list,
+                                sizeof(u32),
                                 6,
                                 index_list)) {
     KFATAL("create_fallback_geometry :: failed to create fallback geometry");
     return false;
   }
   state->fallback_geometry.material = material_system_get_fallback();
+
+  vertex_2d vertex_2d_list[] = {
+    {
+      .position.x = -0.5f * factor,
+      .position.y = -0.5f * factor,
+      .texcoord.x = 0.0f,
+      .texcoord.y = 0.0f
+    },
+    {
+      .position.x = 0.5f * factor,
+      .position.y = 0.5f * factor,
+      .texcoord.x = 1.0f,
+      .texcoord.y = 1.0f
+    },
+    {
+      .position.x = -0.5f * factor,
+      .position.y = 0.5f * factor,
+      .texcoord.x = 0.0f,
+      .texcoord.y = 1.0f
+    },
+    {
+      .position.x = 0.5f * factor,
+      .position.y = -0.5f * factor,
+      .texcoord.x = 1.0f,
+      .texcoord.y = 0.0f
+    }
+  };
+  u32 index_2d_list[] = {2, 1, 0, 3, 0, 1};
+
+  if (!renderer_create_geometry(&state->fallback_2D_geometry,
+                                sizeof(vertex_2d),
+                                4,
+                                vertex_2d_list,
+                                sizeof(u32),
+                                6,
+                                index_2d_list)) {
+    KFATAL("create_fallback_geometry :: failed to create fallback 2D geometry");
+    return false;
+  }
+  state->fallback_2D_geometry.material = material_system_get_fallback();
+
   return true;
 }
 
 b8 create_geometry(geometry_system_state *state, geometry_config cfg, geometry *g) {
   if (!renderer_create_geometry(g,
+                                cfg.vertex_size,
                                 cfg.vertex_count,
                                 cfg.vertices,
+                                cfg.index_size,
                                 cfg.index_count,
                                 cfg.indices)) {
     state->registered_geometries[g->id].ref_count = 0;
@@ -123,7 +170,7 @@ b8 geometry_system_initialize(u64 *memory_requirements,
     return false;
   }
   u64 struct_requirements = sizeof(geometry_system_state);
-  u64 array_requirements = sizeof(geometry) * config.max_geometry_count;
+  u64 array_requirements = sizeof(geometry_ref) * config.max_geometry_count;
   *memory_requirements = struct_requirements + array_requirements;
   if (!state) return true;
 
@@ -138,8 +185,8 @@ b8 geometry_system_initialize(u64 *memory_requirements,
     state_ptr->registered_geometries[i].geometry.internal_id = INVALID_ID;
   }
 
-  if (!create_fallback_geometry(state_ptr)) {
-    KFATAL("geometry_system_initialize :: Fallback geometry creation failed");
+  if (!create_fallback_geometries(state_ptr)) {
+    KFATAL("geometry_system_initialize :: Fallback geometries creation failed");
     return false;
   }
   return true;
@@ -186,14 +233,20 @@ geometry *geometry_system_get_fallback(void) {
   return 0;
 }
 
+geometry *geometry_system_get_fallback_2D(void) {
+  if (state_ptr) return &state_ptr->fallback_2D_geometry;
+  KFATAL("geometry_system_get_fallback_2D :: called before geometry system init");
+  return 0;
+}
+
 void geometry_system_release(geometry *geometry) {
   if (!geometry || geometry->id == INVALID_ID) {
-    KWARN("geometry_system_release :: invalid geometry id (nothing was done)");
+    KWARN("geometry_system_release :: invalid geometry ID (nothing was done)");
     return;
   }
   geometry_ref *ref = &state_ptr->registered_geometries[geometry->id];
   if (ref->geometry.id != geometry->id) {
-    KFATAL("geometry_system_release :: geometry id mismatch");
+    KFATAL("geometry_system_release :: geometry ID mismatch");
     return;
   }
   if (ref->ref_count) --ref->ref_count;
@@ -238,8 +291,10 @@ geometry_config geometry_system_gen_plane_cfg(f32 width,
   }
 
   geometry_config cfg = {
+    .vertex_size = sizeof(vertex_3d),
     .vertex_count = x_segment_count * y_segment_count * 4,
     .vertices = kallocate(sizeof(vertex_3d) * cfg.vertex_count, MEMORY_TAG_ARRAY),
+    .index_size = sizeof(u32),
     .index_count = x_segment_count * y_segment_count * 6,
     .indices = kallocate(sizeof(u32) * cfg.index_count, MEMORY_TAG_ARRAY)
   };
@@ -260,10 +315,10 @@ geometry_config geometry_system_gen_plane_cfg(f32 width,
       f32 max_uvy = ((y + 1) / (f32) y_segment_count) * tile_y;
 
       u32 v_offset = ((y * x_segment_count) + x) * 4;
-      vertex_3d *v0 = &cfg.vertices[v_offset];
-      vertex_3d *v1 = &cfg.vertices[v_offset + 1];
-      vertex_3d *v2 = &cfg.vertices[v_offset + 2];
-      vertex_3d *v3 = &cfg.vertices[v_offset + 3];
+      vertex_3d *v0 = &((vertex_3d *) cfg.vertices)[v_offset];
+      vertex_3d *v1 = &((vertex_3d *) cfg.vertices)[v_offset + 1];
+      vertex_3d *v2 = &((vertex_3d *) cfg.vertices)[v_offset + 2];
+      vertex_3d *v3 = &((vertex_3d *) cfg.vertices)[v_offset + 3];
 
       v0->position.x = min_x;
       v0->position.y = min_y;
@@ -286,12 +341,12 @@ geometry_config geometry_system_gen_plane_cfg(f32 width,
       v3->texcoord.y = min_uvy;
 
       u32 i_offset = ((y * x_segment_count) + x) * 6;
-      cfg.indices[i_offset]     = v_offset;
-      cfg.indices[i_offset + 1] = v_offset + 1;
-      cfg.indices[i_offset + 2] = v_offset + 2;
-      cfg.indices[i_offset + 3] = v_offset;
-      cfg.indices[i_offset + 4] = v_offset + 3;
-      cfg.indices[i_offset + 5] = v_offset + 1;
+      ((u32 *) cfg.indices)[i_offset]     = v_offset;
+      ((u32 *) cfg.indices)[i_offset + 1] = v_offset + 1;
+      ((u32 *) cfg.indices)[i_offset + 2] = v_offset + 2;
+      ((u32 *) cfg.indices)[i_offset + 3] = v_offset;
+      ((u32 *) cfg.indices)[i_offset + 4] = v_offset + 3;
+      ((u32 *) cfg.indices)[i_offset + 5] = v_offset + 1;
     }
   }
 

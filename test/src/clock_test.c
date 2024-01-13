@@ -19,21 +19,25 @@
  */
 
 
-#include <logger.h>
+#include <clock.h>
+#include <expect.h>
+#include <unistd.h>
 #include <clock_test.h>
 #include <test_manager.h>
-#include <kstring_test.h>
-#include <hash_table_test.h>
-#include <linear_allocator_test.h>
 
-int main(void) {
-  test_manager_init();
+u8 clock_test_1s_elapsed(void) {
+  clock clk;
+  clock_start(&clk);
+  float_should_be(0, clk.elapsed);
+  float_should_not_be(0, clk.start);
+  sleep(1);
+  clock_update(&clk);
+  clock_stop(&clk);
+  float_should_be(1, clk.elapsed);
+  float_should_be(0, clk.start);
+  return true;
+}
 
-  clock_test_register();
-  kstring_test_register();
-  hash_table_test_register();
-  linear_allocator_test_register();
-
-  test_manager_run();
-  return 0;
+void clock_test_register(void) {
+  REGISTER_TEST(clock_test_1s_elapsed);
 }

@@ -99,7 +99,7 @@ void kstrsub(char *dest, const char *src, u64 start, u64 len) {
   }
   if (len > 0) {
     for (u64 i = start, j = 0; j < len && src[i]; ++i, ++j) dest[j] = src[i];
-    dest[start + len] = 0;
+    dest[len] = 0;
   }
   else {
     u64 j = 0;
@@ -174,7 +174,7 @@ b8 str_to_f64(char *str, f64 *f) {
 b8 str_to_i8(char *str, i8 *i) {
   if (!str) return false;
   *i = 0;
-  i32 result = sscanf(str, "%c", i);
+  i32 result = sscanf(str, "%hhi", i);
   return result != -1;
 }
 
@@ -228,8 +228,7 @@ b8 str_to_u64(char *str, u64 *u) {
 }
 
 b8 str_to_bool(char *str, b8 *b) {
-  (void) b;  // Unused parameter
-
   if (!str) return false;
-  return kstrcmp(str, "1") || kstrcmpi(str, "true");
+  *b = kstrcmp(str, "1") || kstrcmpi(str, "true");
+  return true;
 }

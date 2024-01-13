@@ -19,21 +19,6 @@
  */
 
 
-#include <logger.h>
-#include <clock_test.h>
-#include <test_manager.h>
-#include <kstring_test.h>
-#include <hash_table_test.h>
-#include <linear_allocator_test.h>
+#pragma once
 
-int main(void) {
-  test_manager_init();
-
-  clock_test_register();
-  kstring_test_register();
-  hash_table_test_register();
-  linear_allocator_test_register();
-
-  test_manager_run();
-  return 0;
-}
+void kstring_test_register(void);

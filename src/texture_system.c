@@ -228,9 +228,11 @@ texture *texture_system_get(const char *name, b8 auto_release) {
            name,
            ref.ref_count);
   }
-  else KTRACE("Texture '%s' already exists. `ref_count` -> %i",
-              name,
-              ref.ref_count);
+  else {
+    KTRACE("Texture '%s' already exists. `ref_count` -> %i",
+           name,
+           ref.ref_count);
+  }
   // Update entry
   hash_table_set(&state_ptr->registered_texture_table, name, &ref);
   return &state_ptr->registered_textures[ref.handle];
@@ -269,10 +271,12 @@ void texture_system_release(const char *name) {
     ref.auto_release = false;
     KTRACE("Texture '%s' released (`ref_count` -> 0 && `auto_release` -> true)", name_cp);
   }
-  else KTRACE("Texture '%s' released (`ref_count` -> %i && `auto_release` -> %s)",
-              name_cp,
-              ref.ref_count,
-              ref.auto_release ? "true" : "false");
+  else {
+    KTRACE("Texture '%s' released (`ref_count` -> %i && `auto_release` -> %s)",
+           name_cp,
+           ref.ref_count,
+           ref.auto_release ? "true" : "false");
+  }
   // Update entry
   hash_table_set(&state_ptr->registered_texture_table, name_cp, &ref);
 }

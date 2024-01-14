@@ -60,11 +60,18 @@ This program is distributed in the hope that it will be useful, but WITHOUT ANY 
       - [[#shader-modules][Shader modules]]
       - [[#vertex-shader][Vertex shader]]
       - [[#fragment-shader][Fragment shader]]
+  - [[#data-structures][Data structures]]
+    - [[#dynamic-array-darray][Dynamic array (~darray~)]]
+    - [[#free-list][Free list]]
+      - [[#allocation][Allocation]]
+      - [[#free][Free]]
+    - [[#hash-table][Hash table]]
+    - [[#stack][Stack]]
+    - [[#queue][Queue]]
+    - [[#ring][Ring]]
+    - [[#pool][Pool]]
+    - [[#binary-search-tree-bst][Binary Search Tree (BST)]]
 - [[#install-a-release][Install a release]]
-  - [[#archive-targz--zip][Archive (~.tar.gz~ || ~.zip~)]]
-  - [[#appimage][AppImage]]
-  - [[#flatpak][Flatpak]]
-  - [[#snap][Snap]]
 - [[#build-from-source][Build from source]]
   - [[#get-the-code][Get the code]]
   - [[#build][Build]]
@@ -267,23 +274,79 @@ flowchart TB
 
 (...)
 
+** Data structures
+
+(...)
+
+*** Dynamic array (~darray~)
+
+(...)
+
+*** Free list
+
+A free list is a data structure which mantains the locations and sizes of memory blocks as they are allocated and freed. Effectively, it only tracks the actual allocations themselves.
+
+It uses a linked list internally, which typically means dynamic allocations have to occur for each node. However, in this implementation it only happens a single time and up front, to likely reduce the overhead.
+
+#+CAPTION: Free list diagram
+[[assets/free-list-diagram-1.png]]
+
+There are two possible ways to implement an allocation:
+
+1. *First fit:* Use the first block of memory that can hold the requested amount. It is fast to perform the allocation, and it stops searching at the first match. However, it can lead to memory fragmentation quite often.
+2. *Best fit:* Search all blocks of memory for the closest match in size. It is slow to perform the allocation, as it has to search through the entire list. However, it can be slightly better at preventing memory fragmentation depending on the specific setup.
+
+After research and testing, the theoretical benefits of a /best fit/ solution doesn't outweight the costs, so the selected method has been the /first fit/ (1).
+
+**** Allocation
+
+#+CAPTION: Free list allocation operation diagram
+[[assets/free-list-diagram-2.png]]
+
+1. When a request comes in for memory allocation, the system checks the free list to see if there's an available block that can fulfill the request. This is done by iterating over the free list until a suitable block is found.
+
+2. Once a suitable block is found, it is *removed* from the free list. This means updating the links between the other blocks in the list to exclude the newly allocated block.
+
+3. The block is then *marked* as being in use. This could involve changing a status flag or similar mechanism.
+
+4. Finally, the address of the allocated block, or in this case an *offset*, is returned to the requester.
+
+**** Free
+
+#+CAPTION: Free list allocation operation diagram
+[[assets/free-list-diagram-3.png]]
+
+1. When a block is no longer in use and needs to be *returned* to the free list, it is first marked as available again. This might involve clearing a status flag or similar mechanism.
+
+2. The block is then *added back* to the free list. This involves updating the links between the other blocks in the list to include the newly freed block.
+
+3. Finally, the system may need to perform some form of compaction operation to ensure that the free list remains efficient. This could involve moving the freed block to a different location in memory if doing so would make the free list more compact or efficient.
+
+*** Hash table
+
+(...)
+
+*** Stack
+
+(...)
+
+*** Queue
+
+(...)
+
+*** Ring
+
+(...)
+
+*** Pool
+
+(...)
+
+*** Binary Search Tree (BST)
+
+(...)
+
 * Install a release
-
-(...)
-
-** Archive (~.tar.gz~ || ~.zip~)
-
-(...)
-
-** AppImage
-
-(...)
-
-** Flatpak
-
-(...)
-
-** Snap
 
 (...)
 

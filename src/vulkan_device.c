@@ -319,6 +319,7 @@ b8 select_physical_device(vulkan_context *context) {
       };
       break;
     }
+    darray_destroy(requirements.extensions);
   }
   // Ensure a device was selected
   if (!context->device.physical_device) {
@@ -347,20 +348,21 @@ b8 vulkan_device_create(vulkan_context *context) {
 
   // Queue create info array
   VkDeviceQueueCreateInfo queue_create_infos[index_count];
+  f32 *queue_priorities[index_count];
   for (u32 i = 0; i < index_count; ++i) {
-    f32 *queue_priority = darray_create(f32);
-    darray_push(queue_priority, 1.0f);
+    queue_priorities[i] = darray_create(f32);
+    darray_push(queue_priorities[i], 1.0f);
     queue_create_infos[i] = (VkDeviceQueueCreateInfo) {
       .sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO,
       .queueFamilyIndex = indices[i],
       .queueCount = 1,
-      .pQueuePriorities = queue_priority,
+      .pQueuePriorities = queue_priorities[i],
       .flags = 0,
       .pNext = 0
     };
     if ((i32) indices[i] == context->device.graphics) {
       queue_create_infos[i].queueCount = 2;
-      darray_push(queue_priority, 1.0f);
+      darray_push(queue_priorities[i], 1.0f);
     }
   }
 
@@ -386,6 +388,8 @@ b8 vulkan_device_create(vulkan_context *context) {
                           context->allocator,
                           &context->device.logical_device));
   KINFO("Logical device created");
+
+  for (u32 i = 0; i < index_count; ++i) darray_destroy(queue_priorities[i]);
 
   // Obtain queue handlers
   vkGetDeviceQueue(context->device.logical_device,

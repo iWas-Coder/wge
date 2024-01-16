@@ -52,17 +52,16 @@ void destroy_texture(texture *t) {
 
 b8 create_fallback_textures(texture_system_state *state) {
   // Fallback texture creation (256x256 blue+white checkerboard pattern)
-  const i32 texture_size = 256;
-  const i32 channels = 4;
-  const i32 pixel_count = texture_size * texture_size;
-  u8 *pixels = kallocate(sizeof(u8) * pixel_count * channels, MEMORY_TAG_TEXTURE);
-  // u8 pixels[pixel_count * channels];
+  const u32 texture_size = 256;
+  const u8 channel_count = 4;
+  const u32 pixel_count = texture_size * texture_size;
+  u8 pixels[pixel_count * channel_count];
   // set all pixels to white
-  kset_memory(pixels, texture_size - 1, sizeof(u8) * pixel_count * channels);
-  for (u64 i = 0; i < texture_size; ++i) {
-    for (u64 j = 0; j < texture_size; ++j) {
-      u64 idx = (i * texture_size) + j;
-      u64 idx_bpp = idx * channels;
+  kset_memory(pixels, texture_size - 1, sizeof(u8) * pixel_count * channel_count);
+  for (u32 i = 0; i < texture_size; ++i) {
+    for (u32 j = 0; j < texture_size; ++j) {
+      u32 idx = (i * texture_size) + j;
+      u32 idx_bpp = idx * channel_count;
       // set alternating pixels to blue (setting red/green channels to 0)
       if (i % 2 && j % 2) {
         pixels[idx_bpp]     = 0;
@@ -78,7 +77,7 @@ b8 create_fallback_textures(texture_system_state *state) {
   state->fallback_texture = (texture) {
     .width = texture_size,
     .height = texture_size,
-    .channel_count = channels,
+    .channel_count = channel_count,
     .generation = INVALID_ID,
     .has_transparency = false
   };

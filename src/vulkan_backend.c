@@ -495,6 +495,8 @@ b8 vulkan_renderer_backend_initialize(renderer_backend *backend, const char *app
   // Mark all geometries as invalid
   for (u32 i = 0; i < GEOMETRY_MAX_COUNT; ++i) context.geometries[i].id = INVALID_ID;
 
+  darray_destroy(vk_extensions);
+
   KINFO("Vulkan renderer initialized");
   return true;
 }

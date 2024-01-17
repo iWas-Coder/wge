@@ -69,7 +69,7 @@ STATIC_ASSERT(sizeof(f64) == 8, "ERROR: f64 :: 8B");
 #define false 0
 
 // Max value of unsigned integer
-#define INVALID_ID 4294967295U
+#define INVALID_ID (0U - 1U)
 
 // Platform detection
 #if defined(WIN32) || defined(_WIN32) || defined(__WIN32__)

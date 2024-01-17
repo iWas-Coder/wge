@@ -171,8 +171,7 @@ b8 event_on_debug(u16 code, void *sender, void *listener_inst, event_context dat
   choice %= 5;
 
   if (app_state->test_geometry) {
-    app_state->test_geometry->material->diffuse_map.texture = texture_system_get(names[choice],
-                                                                              true);
+    app_state->test_geometry->material->diffuse_map.texture = texture_system_get(names[choice], true);
     if (!app_state->test_geometry->material->diffuse_map.texture) {
       KWARN("event_on_debug :: no texture detected (using fallback)");
       app_state->test_geometry->material->diffuse_map.texture = texture_system_get_fallback();
@@ -370,7 +369,9 @@ b8 application_run(void) {
   u8 frame_count = 0;
   f64 target_frame_time = 1.0f / FRAMERATE;
 
-  KINFO(get_memory_usage_str());
+  char *mem_usage_str = get_memory_usage_str();
+  KINFO(mem_usage_str);
+  kfree(mem_usage_str, MEM_USE_PRINT_BUF_SIZE + 1, MEMORY_TAG_STRING);
 
   while (app_state->is_running) {
     if (!platform_pump_messages()) app_state->is_running = false;

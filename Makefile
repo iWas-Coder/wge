@@ -261,11 +261,10 @@ $(SHADERS_BUILD_DIR):
 	@mkdir -p $@
 
 $(DIST_BUILD_DIR):
-	@if [ -z "$(RELEASE)" ]; then                                                       \
-	  $(error dist archives (.tar.gz && .zip) can only be built while in RELEASE mode); \
+	@if [ ! -z "$(RELEASE)" ]; then \
+	  echo "  $(PPO_MKDIR)   $@";   \
+	  mkdir -p $@;                  \
 	fi
-	@echo "  $(PPO_MKDIR)   $@"
-	@mkdir -p $@
 # **************************************************** #
 
 # ***************** '.config': check ***************** #
@@ -375,36 +374,42 @@ install:
 # **************************************************** #
 
 # ********************** 'dist' ********************** #
-dist: $(DIST_BUILD_DIR) $(DIST_TAR_GZ) $(DIST_ZIP)
-	@:
+dist: wge shaders $(DIST_BUILD_DIR) $(DIST_TAR_GZ) $(DIST_ZIP)
+	@if [ ! -z "$(RELEASE)" ]; then                                           \
+	  echo "Archive: $(DIST_TAR_GZ) is ready  ($(DIST_VERSION))";             \
+	  echo "Archive: $(DIST_ZIP) is ready  ($(DIST_VERSION))";                \
+	else                                                                      \
+	  >&2 echo "[ERROR]: The 'dist' target only works while in RELEASE mode"; \
+	  false;                                                                  \
+	fi
 
 $(DIST_TAR_GZ): $(DIST_TAR)
-	@echo "  $(PPO_GZIP)    $@"
-	@gzip -fk $<
+	@if [ ! -z "$(RELEASE)" ]; then \
+	  echo "  $(PPO_GZIP)    $@";   \
+	  gzip -fk $<;                  \
+	fi
 
 $(DIST_TAR): $(BUILD_DIR) $(WGE_OUT) $(SHADERS_BUILD_DIR) $(SHADERS_OUT)
-	@if [ -z "$(RELEASE)" ]; then                                                       \
-	  $(error dist archives (.tar.gz && .zip) can only be built while in RELEASE mode); \
+	@if [ ! -z "$(RELEASE)" ]; then                 \
+	  echo "  $(PPO_TAR)     $(WGE_OUT)";           \
+	  tar -rf $@ $(WGE_OUT);                        \
+	  echo "  $(PPO_TAR)     $(HDR_DIR)";           \
+	  tar -rf $@ $(HDR_DIR);                        \
+	  echo "  $(PPO_TAR)     $(SHADERS_BUILD_DIR)"; \
+	  tar -rf $@ $(SHADERS_BUILD_DIR);              \
+	  echo "  $(PPO_OBJDUMP) $@";                   \
 	fi
-	@echo "  $(PPO_TAR)     $(WGE_OUT)"
-	@tar -rf $@ $(WGE_OUT)
-	@echo "  $(PPO_TAR)     $(HDR_DIR)"
-	@tar -rf $@ $(HDR_DIR)
-	@echo "  $(PPO_TAR)     $(SHADERS_BUILD_DIR)"
-	@tar -rf $@ $(SHADERS_BUILD_DIR)
-	@echo "  $(PPO_OBJDUMP) $@"
 
 $(DIST_ZIP): $(BUILD_DIR) $(WGE_OUT) $(SHADERS_BUILD_DIR) $(SHADERS_OUT)
-	@if [ -z "$(RELEASE)" ]; then                                                       \
-	  $(error dist archives (.tar.gz && .zip) can only be built while in RELEASE mode); \
+	@if [ ! -z "$(RELEASE)" ]; then                 \
+	  echo "  $(PPO_ZIP)     $(WGE_OUT)";           \
+	  zip -qu $@ $(WGE_OUT);                        \
+	  echo "  $(PPO_ZIP)     $(HDR_DIR)";           \
+	  zip -qur $@ $(HDR_DIR);                       \
+	  echo "  $(PPO_ZIP)     $(SHADERS_BUILD_DIR)"; \
+	  zip -qur $@ $(SHADERS_BUILD_DIR);             \
+	  echo "  $(PPO_OBJDUMP) $@";                   \
 	fi
-	@echo "  $(PPO_ZIP)     $(WGE_OUT)"
-	@zip -u $@ $(WGE_OUT)
-	@echo "  $(PPO_ZIP)     $(HDR_DIR)"
-	@zip -ur $@ $(HDR_DIR)
-	@echo "  $(PPO_ZIP)     $(SHADERS_BUILD_DIR)"
-	@zip -ur $@ $(SHADERS_BUILD_DIR)
-	@echo "  $(PPO_OBJDUMP) $@"
 # **************************************************** #
 
 # ***************** 'clean/mrproper' ***************** #

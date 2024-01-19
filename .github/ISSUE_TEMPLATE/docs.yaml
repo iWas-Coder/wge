@@ -1,0 +1,33 @@
+name: Documentation
+description: Create or update a documentation entry
+labels: [docs]
+body:
+  - type: markdown
+    attributes:
+      value: Please fill out the sections below to properly describe the new feature you are suggesting
+  - type: dropdown
+    id: contribution-type
+    attributes:
+      label: New entry or update an existing one?
+      options:
+        - New
+        - Update
+    validations:
+      required: true
+  - type: textarea
+    id: description
+    attributes:
+      label: Describe the contribution
+      placeholder: Section X needs to be created/rewritten because ...
+    validations:
+      required: true
+  - type: checkboxes
+    id: questions
+    attributes:
+      label: Extra questions (optional)
+      options:
+        - label: I have used the search function to check if an issue already exists
+        - label: I'd like to work on this issue
+  - type: markdown
+    attributes:
+      value: Thanks for your contribution! Let's put our typewriters to work.

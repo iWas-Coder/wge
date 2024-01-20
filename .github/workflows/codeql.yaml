@@ -40,9 +40,6 @@ jobs:
         uses: docker://ghcr.io/iwas-coder/wge-builder
         with:
           args: check
-      - name: build-cli
-        working-directory: cli
-        uses: docker://ghcr.io/iwas-coder/wge-cli-builder
       - name: codeql-analysis
         uses: github/codeql-action/analyze@v3
         with:
@@ -75,9 +72,6 @@ jobs:
         uses: docker://ghcr.io/iwas-coder/wge-builder
         with:
           args: RELEASE=1 check
-      - name: build-cli
-        working-directory: cli
-        uses: docker://ghcr.io/iwas-coder/wge-cli-builder
       - name: codeql-analysis
         uses: github/codeql-action/analyze@v3
         with:

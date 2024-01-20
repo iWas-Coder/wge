@@ -14,36 +14,7 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  analyze-debug:
-    timeout-minutes: 360
-    permissions:
-      security-events: write
-      actions: read
-      contents: read
-    strategy:
-      fail-fast: false
-      matrix:
-        language: ['c-cpp']
-    runs-on: ubuntu-latest
-    container: ghcr.io/iwas-coder/wge-builder
-    steps:
-      - name: checkout-repo
-        uses: actions/checkout@v4
-        with:
-          submodules: recursive
-      - name: codeql-init
-        uses: github/codeql-action/init@v3
-        with:
-          languages: ${{ matrix.language }}
-      - name: build-engine
-        run: make
-      - name: test-engine
-        run: make check
-      - name: codeql-analysis
-        uses: github/codeql-action/analyze@v3
-        with:
-          category: "/language:${{matrix.language}}"
-  analyze-release:
+  analyze:
     timeout-minutes: 360
     permissions:
       security-events: write

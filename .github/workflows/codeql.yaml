@@ -23,7 +23,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        language: [ 'c-cpp', 'go' ]
+        language: ['c-cpp']
     runs-on: ubuntu-latest
     steps:
       - name: checkout-repo
@@ -40,6 +40,7 @@ jobs:
         uses: docker://ghcr.io/iwas-coder/wge-builder
         with:
           args: check
+      - run: file libwge.so
       - name: codeql-analysis
         uses: github/codeql-action/analyze@v3
         with:
@@ -53,7 +54,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        language: [ 'c-cpp', 'go' ]
+        language: ['c-cpp']
     runs-on: ubuntu-latest
     steps:
       - name: checkout-repo

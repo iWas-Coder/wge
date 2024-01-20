@@ -25,6 +25,7 @@ jobs:
       matrix:
         language: ['c-cpp']
     runs-on: ubuntu-latest
+    container: ghcr.io/iwas-coder/wge-builder
     steps:
       - name: checkout-repo
         uses: actions/checkout@v4
@@ -35,12 +36,9 @@ jobs:
         with:
           languages: ${{ matrix.language }}
       - name: build-engine
-        uses: docker://ghcr.io/iwas-coder/wge-builder
+        run: make
       - name: test-engine
-        uses: docker://ghcr.io/iwas-coder/wge-builder
-        with:
-          args: check
-      - run: file libwge.so
+        run: make check
       - name: codeql-analysis
         uses: github/codeql-action/analyze@v3
         with:
@@ -56,6 +54,7 @@ jobs:
       matrix:
         language: ['c-cpp']
     runs-on: ubuntu-latest
+    container: ghcr.io/iwas-coder/wge-builder
     steps:
       - name: checkout-repo
         uses: actions/checkout@v4
@@ -66,13 +65,9 @@ jobs:
         with:
           languages: ${{ matrix.language }}
       - name: build-engine
-        uses: docker://ghcr.io/iwas-coder/wge-builder
-        with:
-          args: RELEASE=1
+        run: make RELEASE=1
       - name: test-engine
-        uses: docker://ghcr.io/iwas-coder/wge-builder
-        with:
-          args: RELEASE=1 check
+        run: make RELEASE=1 check
       - name: codeql-analysis
         uses: github/codeql-action/analyze@v3
         with:

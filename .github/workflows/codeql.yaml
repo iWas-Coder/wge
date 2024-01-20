@@ -14,7 +14,7 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  analyze-debug:
+  analyze:
     timeout-minutes: 360
     permissions:
       security-events: write
@@ -23,8 +23,9 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        language: [ 'c-cpp', 'go' ]
+        language: ['c-cpp']
     runs-on: ubuntu-latest
+    container: ghcr.io/iwas-coder/wge-builder
     steps:
       - name: checkout-repo
         uses: actions/checkout@v4
@@ -35,49 +36,9 @@ jobs:
         with:
           languages: ${{ matrix.language }}
       - name: build-engine
-        uses: docker://ghcr.io/iwas-coder/wge-builder
+        run: make RELEASE=1
       - name: test-engine
-        uses: docker://ghcr.io/iwas-coder/wge-builder
-        with:
-          args: check
-      - name: build-cli
-        working-directory: cli
-        uses: docker://ghcr.io/iwas-coder/wge-cli-builder
-      - name: codeql-analysis
-        uses: github/codeql-action/analyze@v3
-        with:
-          category: "/language:${{matrix.language}}"
-  analyze-release:
-    timeout-minutes: 360
-    permissions:
-      security-events: write
-      actions: read
-      contents: read
-    strategy:
-      fail-fast: false
-      matrix:
-        language: [ 'c-cpp', 'go' ]
-    runs-on: ubuntu-latest
-    steps:
-      - name: checkout-repo
-        uses: actions/checkout@v4
-        with:
-          submodules: recursive
-      - name: codeql-init
-        uses: github/codeql-action/init@v3
-        with:
-          languages: ${{ matrix.language }}
-      - name: build-engine
-        uses: docker://ghcr.io/iwas-coder/wge-builder
-        with:
-          args: RELEASE=1
-      - name: test-engine
-        uses: docker://ghcr.io/iwas-coder/wge-builder
-        with:
-          args: RELEASE=1 check
-      - name: build-cli
-        working-directory: cli
-        uses: docker://ghcr.io/iwas-coder/wge-cli-builder
+        run: make RELEASE=1 check
       - name: codeql-analysis
         uses: github/codeql-action/analyze@v3
         with:

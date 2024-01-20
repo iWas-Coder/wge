@@ -75,6 +75,7 @@ typedef struct {
   void *geometry_system_state;
   // TEMPORARY: to test things out
   geometry *test_geometry;
+  geometry *test_ui_geometry;
 } application_state;
 
 static application_state *app_state;
@@ -199,21 +200,21 @@ b8 application_create(game *game_inst) {
   // Initialize event system
   event_system_initialize(&app_state->event_system_memory_requirements, 0);
   app_state->event_system_state = linear_allocator_alloc(&app_state->systems_allocator,
-                                                        app_state->event_system_memory_requirements);
+                                                         app_state->event_system_memory_requirements);
   event_system_initialize(&app_state->event_system_memory_requirements,
                           app_state->event_system_state);
 
   // Initialize memory system
   memory_system_initialize(&app_state->memory_system_memory_requirements, 0);
   app_state->memory_system_state = linear_allocator_alloc(&app_state->systems_allocator,
-                                                         app_state->memory_system_memory_requirements);
+                                                          app_state->memory_system_memory_requirements);
   memory_system_initialize(&app_state->memory_system_memory_requirements,
                            app_state->memory_system_state);
 
   // Initialize logging system
   initialize_logging(&app_state->logging_system_memory_requirements, 0);
   app_state->logging_system_state = linear_allocator_alloc(&app_state->systems_allocator,
-                                                          app_state->logging_system_memory_requirements);
+                                                           app_state->logging_system_memory_requirements);
   if (!initialize_logging(&app_state->logging_system_memory_requirements,
                           app_state->logging_system_state)) {
     KERROR("Logging system initialization failed. Shutting down the engine...");
@@ -223,7 +224,7 @@ b8 application_create(game *game_inst) {
   // Initialize input system
   input_system_initialize(&app_state->input_system_memory_requirements, 0);
   app_state->input_system_state = linear_allocator_alloc(&app_state->systems_allocator,
-                                                        app_state->input_system_memory_requirements);
+                                                         app_state->input_system_memory_requirements);
   input_system_initialize(&app_state->input_system_memory_requirements,
                           app_state->input_system_state);
 
@@ -243,7 +244,7 @@ b8 application_create(game *game_inst) {
                           0,
                           0);
   app_state->platform_system_state = linear_allocator_alloc(&app_state->systems_allocator,
-                                                           app_state->platform_system_memory_requirements);
+                                                            app_state->platform_system_memory_requirements);
   if (!platform_system_startup(&app_state->platform_system_memory_requirements,
                                app_state->platform_system_state,
                                game_inst->app_config.name,
@@ -261,7 +262,7 @@ b8 application_create(game *game_inst) {
                              0,
                              resource_system_cfg);
   app_state->resource_system_state = linear_allocator_alloc(&app_state->systems_allocator,
-                                                           app_state->resource_system_memory_requirements);
+                                                            app_state->resource_system_memory_requirements);
   if (!resource_system_initialize(&app_state->resource_system_memory_requirements,
                                   app_state->resource_system_state,
                                   resource_system_cfg)) {
@@ -274,7 +275,7 @@ b8 application_create(game *game_inst) {
                              0,
                              0);
   app_state->renderer_system_state = linear_allocator_alloc(&app_state->systems_allocator,
-                                                           app_state->renderer_system_memory_requirements);
+                                                            app_state->renderer_system_memory_requirements);
   if (!renderer_system_initialize(&app_state->renderer_system_memory_requirements,
                                   app_state->renderer_system_state,
                                   game_inst->app_config.name)) {
@@ -290,7 +291,7 @@ b8 application_create(game *game_inst) {
                             0,
                             texture_system_cfg);
   app_state->texture_system_state = linear_allocator_alloc(&app_state->systems_allocator,
-                                                          app_state->texture_system_memory_requirements);
+                                                           app_state->texture_system_memory_requirements);
   if (!texture_system_initialize(&app_state->texture_system_memory_requirements,
                                  app_state->texture_system_state,
                                  texture_system_cfg)) {
@@ -306,7 +307,7 @@ b8 application_create(game *game_inst) {
                              0,
                              material_system_cfg);
   app_state->material_system_state = linear_allocator_alloc(&app_state->systems_allocator,
-                                                           app_state->material_system_memory_requirements);
+                                                            app_state->material_system_memory_requirements);
   if (!material_system_initialize(&app_state->material_system_memory_requirements,
                                   app_state->material_system_state,
                                   material_system_cfg)) {
@@ -322,7 +323,7 @@ b8 application_create(game *game_inst) {
                              0,
                              geometry_system_cfg);
   app_state->geometry_system_state = linear_allocator_alloc(&app_state->systems_allocator,
-                                                           app_state->geometry_system_memory_requirements);
+                                                            app_state->geometry_system_memory_requirements);
   if (!geometry_system_initialize(&app_state->geometry_system_memory_requirements,
                                   app_state->geometry_system_state,
                                   geometry_system_cfg)) {
@@ -331,22 +332,65 @@ b8 application_create(game *game_inst) {
   }
 
   // TEMPORARY START: geometry test
+  // The `material_name` is the actual name of the material file ('world.wmt')
+  // 3D world geometry setup
   geometry_config geo_cfg = geometry_system_gen_plane_cfg(10.0f,
                                                           5.0f,
                                                           5,
                                                           5,
                                                           5.0f,
                                                           2.0f,
-                                                          "test_geo_plane",
-                                                          "test_material");
+                                                          "world_geometry",
+                                                          "world");
   app_state->test_geometry = geometry_system_get_from_cfg(geo_cfg, true);
-  // app_state->test_geometry = geometry_system_get_fallback();
   kfree(geo_cfg.vertices,
         sizeof(vertex_3d) * geo_cfg.vertex_count,
         MEMORY_TAG_ARRAY);
   kfree(geo_cfg.indices,
         sizeof(u32) * geo_cfg.index_count,
         MEMORY_TAG_ARRAY);
+
+  // 2D UI geometry setup
+  const f32 factor = 512.0f;
+  vertex_2d ui_vertex_list[] = {
+    {
+      .position.x = 0.0f,
+      .position.y = 0.0f,
+      .texcoord.x = 0.0f,
+      .texcoord.y = 0.0f
+    },
+    {
+      .position.x = factor,
+      .position.y = factor,
+      .texcoord.x = 1.0f,
+      .texcoord.y = 1.0f
+    },
+    {
+      .position.x = 0.0f,
+      .position.y = factor,
+      .texcoord.x = 0.0f,
+      .texcoord.y = 1.0f
+    },
+    {
+      .position.x = factor,
+      .position.y = 0.0f,
+      .texcoord.x = 1.0f,
+      .texcoord.y = 0.0f
+    }
+  };
+  u32 ui_index_list[] = {2, 1, 0, 3, 0, 1};
+  geometry_config ui_geo_cfg = {
+    .vertex_size = sizeof(vertex_2d),
+    .vertex_count = 4,
+    .vertices = ui_vertex_list,
+    .index_size = sizeof(u32),
+    .index_count = 6,
+    .indices = ui_index_list
+  };
+  kstrncp(ui_geo_cfg.name, "ui_geometry", GEOMETRY_NAME_MAX_LEN);
+  // The `material_name` is the actual name of the material file ('ui.wmt')
+  kstrncp(ui_geo_cfg.material_name, "ui", MATERIAL_NAME_MAX_LEN);
+  app_state->test_ui_geometry = geometry_system_get_from_cfg(ui_geo_cfg, true);
   // TEMPORARY END: geometry test
   
   // Game initialization
@@ -398,12 +442,16 @@ b8 application_run(void) {
         .geometry = app_state->test_geometry,
         .model = mat4_id()
       };
+      geometry_render_data test_ui_render = {
+        .geometry = app_state->test_ui_geometry,
+        .model = mat4_translation((Vector3) {{{0, 0, 0}}})
+      };
       render_packet packet = {
         .delta_time = delta,
         .geometry_count = 1,
-        .ui_geometry_count = 0,
+        .ui_geometry_count = 1,
         .geometries = &test_render,
-        .ui_geometries = 0
+        .ui_geometries = &test_ui_render
       };
       renderer_draw_frame(&packet);
       // TEMPORARY END: geometry test

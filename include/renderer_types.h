@@ -70,10 +70,12 @@ typedef struct renderer_backend {
   b8 (*end_renderpass)(struct renderer_backend *backend, u8 renderpass_id);
   void (*draw_geometry)(geometry_render_data data);
   b8 (*create_geometry)(geometry *geometry,
+                        u32 vertex_size,
                         u32 vertex_count,
-                        const vertex_3d *vertices,
+                        const void *vertices,
+                        u32 index_size,
                         u32 index_count,
-                        const u32 *indices);
+                        const void *indices);
   void (*destroy_geometry)(geometry *geometry);
   void (*create_texture)(const u8 *pixels, texture *texture);
   void (*destroy_texture)(texture *texture);

@@ -30,10 +30,12 @@ typedef struct {
 } geometry_system_config;
 
 typedef struct {
+  u32 vertex_size;
   u32 vertex_count;
-  vertex_3d *vertices;
+  void *vertices;
+  u32 index_size;
   u32 index_count;
-  u32 *indices;
+  void *indices;
   char name[GEOMETRY_NAME_MAX_LEN];
   char material_name[MATERIAL_NAME_MAX_LEN];
 } geometry_config;
@@ -49,6 +51,8 @@ geometry *geometry_system_get(u32 id);
 geometry *geometry_system_get_from_cfg(geometry_config cfg, b8 auto_release);
 
 geometry *geometry_system_get_fallback(void);
+
+geometry *geometry_system_get_fallback_2D(void);
 
 void geometry_system_release(geometry *geometry);
 

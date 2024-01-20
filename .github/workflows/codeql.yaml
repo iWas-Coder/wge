@@ -1,0 +1,84 @@
+name: wge-analyze
+
+on:
+  push:
+    branches: [master]
+  pull_request:
+    branches: [master]
+    types: [opened, synchronize]
+  schedule:
+    - cron: '0 0 * * 5'
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  analyze-debug:
+    timeout-minutes: 360
+    permissions:
+      security-events: write
+      actions: read
+      contents: read
+    strategy:
+      fail-fast: false
+      matrix:
+        language: [ 'c-cpp', 'go' ]
+    runs-on: ubuntu-latest
+    steps:
+      - name: checkout-repo
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+      - name: codeql-init
+        uses: github/codeql-action/init@v3
+        with:
+          languages: ${{ matrix.language }}
+      - name: build-engine
+        uses: docker://ghcr.io/iwas-coder/wge-builder
+      - name: test-engine
+        uses: docker://ghcr.io/iwas-coder/wge-builder
+        with:
+          args: check
+      - name: build-cli
+        working-directory: cli
+        uses: docker://ghcr.io/iwas-coder/wge-cli-builder
+      - name: codeql-analysis
+        uses: github/codeql-action/analyze@v3
+        with:
+          category: "/language:${{matrix.language}}"
+  analyze-release:
+    timeout-minutes: 360
+    permissions:
+      security-events: write
+      actions: read
+      contents: read
+    strategy:
+      fail-fast: false
+      matrix:
+        language: [ 'c-cpp', 'go' ]
+    runs-on: ubuntu-latest
+    steps:
+      - name: checkout-repo
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+      - name: codeql-init
+        uses: github/codeql-action/init@v3
+        with:
+          languages: ${{ matrix.language }}
+      - name: build-engine
+        uses: docker://ghcr.io/iwas-coder/wge-builder
+        with:
+          args: RELEASE=1
+      - name: test-engine
+        uses: docker://ghcr.io/iwas-coder/wge-builder
+        with:
+          args: RELEASE=1 check
+      - name: build-cli
+        working-directory: cli
+        uses: docker://ghcr.io/iwas-coder/wge-cli-builder
+      - name: codeql-analysis
+        uses: github/codeql-action/analyze@v3
+        with:
+          category: "/language:${{matrix.language}}"

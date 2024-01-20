@@ -45,6 +45,8 @@ jobs:
     steps:
       - name: checkout-repo
         uses: actions/checkout@v4
+      - name: cd-cli
+        run: cd cli
+      - run: pwd
       - name: build
-        working-directory: cli
         uses: docker://ghcr.io/iwas-coder/wge-cli-builder

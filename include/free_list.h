@@ -19,23 +19,25 @@
  */
 
 
-#include <logger.h>
-#include <clock_test.h>
-#include <test_manager.h>
-#include <kstring_test.h>
-#include <free_list_test.h>
-#include <hash_table_test.h>
-#include <linear_allocator_test.h>
+#pragma once
 
-int main(void) {
-  test_manager_init();
+#include <defines.h>
 
-  clock_test_register();
-  kstring_test_register();
-  free_list_test_register();
-  hash_table_test_register();
-  linear_allocator_test_register();
+typedef struct {
+  void *memory;
+} free_list;
 
-  test_manager_run();
-  return 0;
-}
+KAPI void free_list_create(u32 total_size,
+                           u64 *memory_requirements,
+                           void *memory,
+                           free_list *out_list);
+
+KAPI void free_list_destroy(free_list *list);
+
+KAPI b8 free_list_alloc(free_list *list, u32 size, u32 *out_offset);
+
+KAPI b8 free_list_free(free_list *list, u32 size, u32 offset);
+
+KAPI void free_list_clear(free_list *list);
+
+KAPI u64 free_list_get_free_space(free_list *list);

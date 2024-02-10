@@ -34,7 +34,7 @@ typedef struct {
 
 static resource_system_state *state_ptr = 0;
 
-b8 load(resource_loader *loader, const char *name, resource *out_resource) {
+static b8 load(resource_loader *loader, const char *name, resource *out_resource) {
   if (!name || !loader || !loader->load || !out_resource) {
     out_resource->loader_id = INVALID_ID;
     return false;

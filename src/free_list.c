@@ -38,7 +38,7 @@ typedef struct {
   free_list_node *nodes;
 } internal_state;
 
-free_list_node *get_node(free_list *list) {
+static free_list_node *get_node(free_list *list) {
   internal_state *state = list->memory;
   for (u32 i = 1; i < state->max_entries; ++i) {
     if (state->nodes[i].offset == INVALID_ID) return &state->nodes[i];
@@ -46,7 +46,7 @@ free_list_node *get_node(free_list *list) {
   return 0;
 }
 
-void return_node(free_list *list, free_list_node *node) {
+static void return_node(free_list *list, free_list_node *node) {
   (void) list;  // Unused parameter
   node->offset = INVALID_ID;
   node->size = INVALID_ID;

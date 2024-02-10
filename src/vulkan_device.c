@@ -81,7 +81,7 @@ void vulkan_device_query_swapchain_support(VkPhysicalDevice physical_device,
   }
 }
 
-b8 physical_device_meets_requirements(VkPhysicalDevice device,
+static b8 physical_device_meets_requirements(VkPhysicalDevice device,
                                       VkSurfaceKHR surface,
                                       const VkPhysicalDeviceProperties* properties,
                                       const VkPhysicalDeviceFeatures* features,
@@ -219,7 +219,7 @@ b8 physical_device_meets_requirements(VkPhysicalDevice device,
   return false;
 }
 
-b8 select_physical_device(vulkan_context *context) {
+static b8 select_physical_device(vulkan_context *context) {
   u32 c = 0;
   VK_CHECK(vkEnumeratePhysicalDevices(context->instance, &c, 0));
   if (!c) {

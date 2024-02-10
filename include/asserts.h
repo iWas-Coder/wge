@@ -26,14 +26,13 @@
 #define KASSERTIONS_ENABLED
 
 #ifdef KASSERTIONS_ENABLED
+
 #if _MSC_VER
-// MSVC-specific halt function
 #include <intrin.h>
 #define debugBreak() __debugbreak()
 #else
-// GCC-specific halt function
 #define debugBreak() __builtin_trap()
-#endif
+#endif  // _MSC_VER
 
 KAPI void report_assertion_failure(const char *expression, const char *message, const char *file, i32 line);
 
@@ -66,10 +65,11 @@ KAPI void report_assertion_failure(const char *expression, const char *message, 
   }
 #else
 #define KASSERT_DEBUG(expr)
-#endif
+#endif  // _DEBUG
 
 #else
 #define KASSERT(expr)
 #define KASSERT_MSG(expr, message)
 #define KASSERT_DEBUG(expr)
-#endif
+
+#endif  // KASSERTIONS_ENABLED

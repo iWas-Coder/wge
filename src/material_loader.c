@@ -34,7 +34,7 @@
 #define MATERIAL_FILE_VALUE_MAX_SIZE (MATERIAL_FILE_LINE_MAX_SIZE - MATERIAL_FILE_VAR_MAX_SIZE - 2)
 #define MATERIAL_FILE_EXTENSION_NAME "wmt"
 
-b8 material_loader_load(resource_loader *self, const char *name, resource *out_resource) {
+static b8 material_loader_load(resource_loader *self, const char *name, resource *out_resource) {
   if (!self || !name || !out_resource) return false;
 
   char *format_str = "%s/%s/%s%s";
@@ -135,7 +135,7 @@ b8 material_loader_load(resource_loader *self, const char *name, resource *out_r
   return true;
 }
 
-void material_loader_unload(resource_loader *self, resource *resource) {
+static void material_loader_unload(resource_loader *self, resource *resource) {
   if (!resource_unload(self, resource, MEMORY_TAG_MATERIAL_INSTANCE)) {
     KWARN("material_loader_unload :: `self` and `resource` are required");
   }

@@ -42,7 +42,7 @@ typedef struct {
 
 static texture_system_state *state_ptr = 0;
 
-void destroy_texture(texture *t) {
+static void destroy_texture(texture *t) {
   renderer_destroy_texture(t);
   kzero_memory(t->name, sizeof(char) * TEXTURE_NAME_MAX_LEN);
   kzero_memory(t, sizeof(texture));
@@ -50,7 +50,7 @@ void destroy_texture(texture *t) {
   t->generation = INVALID_ID;
 }
 
-b8 create_fallback_textures(texture_system_state *state) {
+static b8 create_fallback_textures(texture_system_state *state) {
   // Fallback texture creation (256x256 blue+white checkerboard pattern)
   const u32 texture_size = 256;
   const u8 channel_count = 4;
@@ -92,12 +92,12 @@ b8 create_fallback_textures(texture_system_state *state) {
   return true;
 }
 
-void destroy_fallback_textures(texture_system_state *state) {
+static void destroy_fallback_textures(texture_system_state *state) {
   if (state) destroy_texture(&state->fallback_texture);
 }
 
 // TODO: move to resource system
-b8 load_texture(const char *name, texture *t) {
+static b8 load_texture(const char *name, texture *t) {
   resource img_resource;
   if (!resource_system_load(name, RESOURCE_TYPE_IMAGE, &img_resource)) {
     KERROR("load_texture :: failed to load image resource for texture '%s'", name);

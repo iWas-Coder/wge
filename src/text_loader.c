@@ -30,7 +30,7 @@
 
 #define FILE_PATH_SIZE 512
 
-b8 text_loader_load(resource_loader *self, const char *name, resource *out_resource) {
+static b8 text_loader_load(resource_loader *self, const char *name, resource *out_resource) {
   if (!self || !name || !out_resource) return false;
 
   char *format_str = "%s/%s/%s%s";
@@ -73,7 +73,7 @@ b8 text_loader_load(resource_loader *self, const char *name, resource *out_resou
   return true;
 }
 
-void text_loader_unload(resource_loader *self, resource *resource) {
+static void text_loader_unload(resource_loader *self, resource *resource) {
   if (!resource_unload(self, resource, MEMORY_TAG_ARRAY)) {
     KWARN("text_loader_unload :: `self` and `resource` are required");
   }

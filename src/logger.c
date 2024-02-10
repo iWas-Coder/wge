@@ -32,7 +32,7 @@ typedef struct {
 
 static logger_system_state *state_ptr;
 
-void write_to_logfile(const char *msg) {
+static void write_to_logfile(const char *msg) {
   if (!state_ptr || !state_ptr->logfile_handle.is_valid) return;
   u64 len = kstrlen(msg);
   u64 written = 0;

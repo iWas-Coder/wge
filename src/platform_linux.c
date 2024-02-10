@@ -67,7 +67,7 @@ typedef struct {
 
 static platform_state *state_ptr;
 
-keys translate_keycode(u32 xcb_keycode) {
+static keys translate_keycode(u32 xcb_keycode) {
   switch (xcb_keycode) {
   case XK_BackSpace:    return KEY_BACKSPACE;
   case XK_Return:       return KEY_ENTER;

@@ -85,7 +85,7 @@ void application_set_framebuffer_size(u32 *width, u32 *height) {
   *height = app_state->height;
 }
 
-b8 application_on_event(u16 code, void *sender, void *listener_inst, event_context context) {
+static b8 application_on_event(u16 code, void *sender, void *listener_inst, event_context context) {
   (void) sender;         // Unused parameter
   (void) listener_inst;  // Unused parameter
   (void) context;        // Unused parameter
@@ -98,7 +98,7 @@ b8 application_on_event(u16 code, void *sender, void *listener_inst, event_conte
   return false;
 }
 
-b8 application_on_key(u16 code, void *sender, void *listener_inst, event_context context) {
+static b8 application_on_key(u16 code, void *sender, void *listener_inst, event_context context) {
   (void) sender;         // Unused parameter
   (void) listener_inst;  // Unused parameter
 
@@ -120,7 +120,7 @@ b8 application_on_key(u16 code, void *sender, void *listener_inst, event_context
   return false;
 }
 
-b8 application_on_resized(u16 code, void *sender, void *listener_inst, event_context context) {
+static b8 application_on_resized(u16 code, void *sender, void *listener_inst, event_context context) {
   (void) sender;         // Unused parameter
   (void) listener_inst;  // Unused parameter
 
@@ -153,7 +153,7 @@ b8 application_on_resized(u16 code, void *sender, void *listener_inst, event_con
 }
 
 // TEMPORARY function to handle event which swaps the texture while app is running
-b8 event_on_debug(u16 code, void *sender, void *listener_inst, event_context data) {
+static b8 event_on_debug(u16 code, void *sender, void *listener_inst, event_context data) {
   (void) code;           // Unused parameter
   (void) sender;         // Unused parameter
   (void) listener_inst;  // Unused parameter
@@ -471,8 +471,8 @@ b8 application_run(void) {
       // Input is the last thing to be updated before the frame ends
       input_update(delta);
 
-      (void) running_time;  // Unused parameter
-      (void) frame_count;   // Unused parameter
+      (void) running_time;  // Unused variable
+      (void) frame_count;   // Unused variable
 
       app_state->last_time = current_time;
     }

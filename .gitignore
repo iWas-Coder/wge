@@ -1,5 +1,8 @@
 .cache/
 build/
+docs/www/.docusaurus/
+docs/www/node_modules/
+docs/www/build/
 
 *.so
 *.yaml
@@ -11,3 +14,4 @@ test/test
 cli/*cli*
 
 !.github/**/*.yaml
+!docs/www/docs/**/*.yaml

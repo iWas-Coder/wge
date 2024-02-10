@@ -1,0 +1,64 @@
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@200;300;400;500;600;700&display=swap');
+
+:root {
+  --dark: #282c34;
+  --ifm-font-family-base: 'Poppins';
+  --ifm-font-size-base: 17px;
+  --ifm-color-primary: #3986ba;
+  --ifm-color-primary-dark: #1876b2;
+  --ifm-color-primary-darker: #53a9ce;
+  --ifm-color-primary-darkest: #58abce;
+  --ifm-color-primary-light: #7cc8c9;
+  --ifm-color-primary-lighter: #aedadb;
+  --ifm-color-primary-lightest: #c8e3e5;
+  --ifm-code-font-size: 95%;
+  --docusaurus-highlighted-code-line-bg: rgba(0, 0, 0, 0.1);
+}
+
+[data-theme='dark'] {
+  --ifm-color-primary: #3986ba;
+  --ifm-color-primary-dark: #1876b2;
+  --ifm-color-primary-darker: #53a9ce;
+  --ifm-color-primary-darkest: #58abce;
+  --ifm-color-primary-light: #7cc8c9;
+  --ifm-color-primary-lighter: #aedadb;
+  --ifm-color-primary-lightest: #c8e3e5;
+  --docusaurus-highlighted-code-line-bg: rgba(0, 0, 0, 0.3);
+}
+
+/* Content Banner */
+
+.content-banner {
+  background: #99d5e7;
+  padding: 1em 1.2em;
+  margin-left: 1em;
+  margin-bottom: 2em;
+  position: relative;
+  overflow: hidden;
+  width: calc(100% + 1em);
+  left: -1em;
+  color: var(--dark);
+}
+
+.content-banner p {
+  width: calc(75% - 2em);
+  margin: 0;
+}
+
+.content-banner-img {
+  width: 25%;
+  position: absolute;
+  top: 2em;
+  right: 2em;
+}
+
+.content-banner a:link,
+.content-banner a:visited,
+.content-banner a:hover,
+.content-banner a:active,
+.content-banner a:focus {
+  border-bottom-width: 2px;
+  background: none !important;
+  color: #134484 !important;
+  border-bottom-color: #134484 !important;
+}

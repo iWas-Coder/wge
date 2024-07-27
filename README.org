@@ -30,7 +30,9 @@
 </p>
 #+end_html
 
-(...)
+#+begin_html
+<h3>⛔ DEPRECATED: this project got superseeded by <code>sparky-game/volt</code> (check it out here => https://github.com/sparky-game/volt)</h3>
+#+end_html
 
 # GNU GPLv3+ License notice
 #+BEGIN_QUOTE

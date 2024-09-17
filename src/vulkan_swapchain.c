@@ -25,7 +25,7 @@
 #include <vulkan_device.h>
 #include <vulkan_swapchain.h>
 
-void create(vulkan_context *context, u32 width, u32 height, vulkan_swapchain *swapchain) {
+static void create(vulkan_context *context, u32 width, u32 height, vulkan_swapchain *swapchain) {
   // Query swapchain support for the first time
   vulkan_device_query_swapchain_support(context->device.physical_device,
                                         context->surface,
@@ -195,7 +195,7 @@ void create(vulkan_context *context, u32 width, u32 height, vulkan_swapchain *sw
   KINFO("Vulkan swapchain created");
 }
 
-void destroy(vulkan_context *context, vulkan_swapchain *swapchain) {
+static void destroy(vulkan_context *context, vulkan_swapchain *swapchain) {
   vkDeviceWaitIdle(context->device.logical_device);
   vulkan_image_destroy(context, &swapchain->depth_attachment);
   for (u32 i = 0; i < swapchain->image_count; ++i) {

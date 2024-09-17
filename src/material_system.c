@@ -43,7 +43,7 @@ typedef struct {
 
 static material_system_state *state_ptr = 0;
 
-void destroy_material(material *m) {
+static void destroy_material(material *m) {
   KTRACE("Destroying material '%s'...", m->name);
   if (m->diffuse_map.texture) texture_system_release(m->diffuse_map.texture->name);
   renderer_destroy_material(m);
@@ -53,7 +53,7 @@ void destroy_material(material *m) {
   m->internal_id = INVALID_ID;
 }
 
-b8 create_fallback_material(material_system_state *state) {
+static b8 create_fallback_material(material_system_state *state) {
   kzero_memory(&state->fallback_material, sizeof(material));
   kstrncp(state->fallback_material.name,
           FALLBACK_MATERIAL_NAME,
@@ -72,7 +72,7 @@ b8 create_fallback_material(material_system_state *state) {
   return true;
 }
 
-b8 load_material(material_config cfg, material *m) {
+static b8 load_material(material_config cfg, material *m) {
   kzero_memory(m, sizeof(material));
   kstrncp(m->name, cfg.name, MATERIAL_NAME_MAX_LEN);
   m->type = cfg.type;

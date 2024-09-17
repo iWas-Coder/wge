@@ -41,7 +41,7 @@ typedef struct {
 
 static geometry_system_state *state_ptr = 0;
 
-b8 create_fallback_geometries(geometry_system_state *state) {
+static b8 create_fallback_geometries(geometry_system_state *state) {
   const f32 factor = 10.0f;
 
   vertex_3d vertex_list[] = {
@@ -126,7 +126,7 @@ b8 create_fallback_geometries(geometry_system_state *state) {
   return true;
 }
 
-b8 create_geometry(geometry_system_state *state, geometry_config cfg, geometry *g) {
+static b8 create_geometry(geometry_system_state *state, geometry_config cfg, geometry *g) {
   if (!renderer_create_geometry(g,
                                 cfg.vertex_size,
                                 cfg.vertex_count,
@@ -148,7 +148,7 @@ b8 create_geometry(geometry_system_state *state, geometry_config cfg, geometry *
   return true;
 }
 
-void destroy_geometry(geometry_system_state *state, geometry *g) {
+static void destroy_geometry(geometry_system_state *state, geometry *g) {
   (void) state;  // Unused parameter
   
   renderer_destroy_geometry(g);

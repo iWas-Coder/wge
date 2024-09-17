@@ -58,15 +58,23 @@ KINLINE f32 rad_to_deg(f32 rad) {
 }
 
 KAPI f32 kabs(f32 x);
+
 KAPI f32 ksqrt(f32 x);
+
 KAPI f32 ksin(f32 x);
+
 KAPI f32 kcos(f32 x);
+
 KAPI f32 ktan(f32 x);
+
 KAPI f32 karccos(f32 x);
 
 KAPI i32 krandom(void);
+
 KAPI f32 krandom_f(void);
+
 KAPI i32 krandom_range(i32 min, i32 max);
+
 KAPI f32 krandom_range_f(f32 min, f32 max);
 
 KINLINE Vector2 vec2_create(f32 x, f32 y) {

@@ -31,7 +31,7 @@
 
 #define FILE_PATH_SIZE 512
 
-b8 image_loader_load(resource_loader *self, const char *name, resource *out_resource) {
+static b8 image_loader_load(resource_loader *self, const char *name, resource *out_resource) {
   if (!self || !name || !out_resource) return false;
 
   char *format_str = "%s/%s/%s%s";
@@ -85,7 +85,7 @@ b8 image_loader_load(resource_loader *self, const char *name, resource *out_reso
   return true;
 }
 
-void image_loader_unload(resource_loader *self, resource *resource) {
+static void image_loader_unload(resource_loader *self, resource *resource) {
   if (!resource_unload(self, resource, MEMORY_TAG_TEXTURE)) {
     KWARN("image_loader_unload :: `self` and `resource` are required");
   }

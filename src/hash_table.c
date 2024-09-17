@@ -25,7 +25,7 @@
 
 #define HASH_MULT 97
 
-u64 hash(const char *name, u32 element_count) {
+static u64 hash(const char *name, u32 element_count) {
   u64 hash = 0;
   for (const u8 *us = (const u8 *) name; *us; ++us) {
     hash = hash * HASH_MULT + *us;

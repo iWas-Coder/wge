@@ -65,7 +65,7 @@ VKAPI_ATTR VkBool32 VKAPI_CALL vk_debug_callback(VkDebugUtilsMessageSeverityFlag
   return VK_FALSE;
 }
 
-i32 find_memory_index(u32 type_filter, u32 property_flags) {
+static i32 find_memory_index(u32 type_filter, u32 property_flags) {
   VkPhysicalDeviceMemoryProperties memory_properties;
   vkGetPhysicalDeviceMemoryProperties(context.device.physical_device, &memory_properties);
   for (u32 i = 0; i < memory_properties.memoryTypeCount; ++i) {
@@ -77,7 +77,7 @@ i32 find_memory_index(u32 type_filter, u32 property_flags) {
   return -1;
 }
 
-b8 create_buffers(vulkan_context *context) {
+static b8 create_buffers(vulkan_context *context) {
   VkMemoryPropertyFlagBits memory_property_flags = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT;
 
   // Geometry vertex buffer
@@ -109,7 +109,7 @@ b8 create_buffers(vulkan_context *context) {
   return true;
 }
 
-void create_command_buffers(renderer_backend *backend) {
+static void create_command_buffers(renderer_backend *backend) {
   (void) backend;  // Unused parameter
 
   if (!context.graphics_command_buffers) {
@@ -135,7 +135,7 @@ void create_command_buffers(renderer_backend *backend) {
   KDEBUG("Vulkan command buffers created");
 }
 
-void regenerate_framebuffers(void) {
+static void regenerate_framebuffers(void) {
   u32 image_count = context.swapchain.image_count;
   for (u32 i = 0; i < image_count; ++i) {
     // Main/world renderpass
@@ -175,7 +175,7 @@ void regenerate_framebuffers(void) {
   }
 }
 
-b8 recreate_swapchain(renderer_backend *backend) {
+static b8 recreate_swapchain(renderer_backend *backend) {
   if (context.recreating_swapchain) {
     KDEBUG("recreate_swapchain :: Already recreating");
     return false;
@@ -236,7 +236,7 @@ b8 recreate_swapchain(renderer_backend *backend) {
   return true;
 }
 
-void upload_data_range(vulkan_context *context,
+static void upload_data_range(vulkan_context *context,
                        VkCommandPool pool,
                        VkFence fence,
                        VkQueue queue,
@@ -269,7 +269,7 @@ void upload_data_range(vulkan_context *context,
   vulkan_buffer_destroy(context, &tmp_buf);
 }
 
-void free_data_range(vulkan_buffer *buffer, u64 offset, u64 size) {
+static void free_data_range(vulkan_buffer *buffer, u64 offset, u64 size) {
   (void) buffer;  // Unused parameter
   (void) offset;  // Unused parameter
   (void) size;    // Unused parameter

@@ -53,12 +53,17 @@ typedef enum {
 } memory_tag;
 
 KAPI void memory_system_initialize(u64 *memory_requirements, void *state);
+
 KAPI void memory_system_shutdown(void *state);
 
 KAPI void *kallocate(u64 size, memory_tag tag);
+
 KAPI void kfree(void *block, u64 size, memory_tag tag);
+
 KAPI void *kzero_memory(void *block, u64 size);
+
 KAPI void *kcopy_memory(void *dest, const void *source, u64 size);
+
 KAPI void *kset_memory(void *dest, i32 value, u64 size);
 
 KAPI char *get_memory_usage_str(void);
